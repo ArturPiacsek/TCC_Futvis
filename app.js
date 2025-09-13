@@ -1,6 +1,31 @@
-// app.js
-
 const API_BASE_URL = 'http://localhost:3000/api';
+
+function fetchTabelaCampeonato() {
+    const selectElement = document.querySelector('#temporada-select');
+    const selectedIdTempo = selectElement.value; // A variável agora tem um nome mais claro
+    
+    const headers = ["#", "Time", "Pts", "PJ", "V", "E", "D", "GP", "GC", "SG"];
+    const keys = ["posicao", "nome", "Pts", "PJ", "V", "E", "D", "GP", "GC", "SG"];
+
+    const apiUrl = `${API_BASE_URL}/tabela-campeonato?id_tempo=${selectedIdTempo}`;
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+
+            const dataComPosicao = data.map((time, index) => ({
+                ...time,
+                posicao: index + 1
+            }));
+
+            createTable(dataComPosicao, "#tabela-campeonato-table", headers, keys);
+        })
+        .catch(error => {
+            console.error(`Erro ao carregar dados de ${apiUrl}:`, error);
+            document.querySelector("#tabela-campeonato-table").innerHTML = `<p class="error-message">Não foi possível carregar os dados.</p>`;
+        });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // Chamar todas as funções de carregamento de dados
@@ -17,6 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ["Jogador", "Amarelos 🟨", "Vermelhos 🟥"], 
         ["nome_jogador", "amarelos", "vermelhos"]
     );
+
+    // 1. Carrega a tabela do campeonato pela primeira vez com a temporada padrão
+    fetchTabelaCampeonato();
+
+    // 2. Adiciona um "ouvinte de eventos" que chama a função de novo toda vez que o usuário MUDA a seleção
+    document.querySelector('#temporada-select').addEventListener('change', fetchTabelaCampeonato);
 });
 
 // Função genérica para buscar dados e desenhar um GRÁFICO DE BARRAS
@@ -95,12 +126,13 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
 // Função de D3 para criar uma tabela genérica
 function createTable(data, selector, headers, keys) {
     const container = d3.select(selector);
-    container.html(""); // Limpa o container
+    container.html(""); // Limpa o container antes de desenhar
 
     const table = container.append("table");
     const thead = table.append("thead");
     const tbody = table.append("tbody");
 
+    // Cria o cabeçalho
     thead.append("tr")
         .selectAll("th")
         .data(headers)
@@ -108,14 +140,29 @@ function createTable(data, selector, headers, keys) {
         .append("th")
         .text(d => d);
 
+    // Cria as linhas de dados
     const rows = tbody.selectAll("tr")
         .data(data)
         .enter()
         .append("tr");
 
+    // Cria as células para cada linha
     rows.selectAll("td")
-        .data(d => keys.map(key => d[key]))
+        .data(rowData => {
+            // Para cada linha de dados, criamos um array de objetos para as células,
+            // mantendo a chave e o valor. Isso nos dá mais controle.
+            return keys.map(key => ({ key: key, value: rowData[key], fullData: rowData }));
+        })
         .enter()
         .append("td")
-        .text(d => d);
+        .html(cellData => {
+            // Agora, para cada célula, verificamos qual é a sua "chave" (key)
+            if (cellData.key === 'nome') {
+                // Se for a célula do nome do time, inserimos o HTML com a imagem e o nome
+                return `<img src="${cellData.fullData.logo_url_time}" class="team-logo" referrerpolicy="no-referrer"> ${cellData.value}`;
+            } else {
+                // Para todas as outras células, apenas inserimos o texto do valor
+                return cellData.value;
+            }
+        });
 }

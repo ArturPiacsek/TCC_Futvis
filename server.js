@@ -125,6 +125,44 @@ app.get('/api/participacoes-gol', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// Rota 6: Tabela de Classificação por Temporada 
+app.get('/api/tabela-campeonato', async (req, res) => {
+    try {        
+        const id_tempo = req.query.id_tempo || '549'; // Default para 2023
+
+        const sql = `
+            SELECT
+                T.nome,
+                SUM(FCT.total_jogos) AS PJ,
+                T.logo_url_time,
+                SUM(FCT.vitorias) AS V,
+                SUM(FCT.empates) AS E,
+                SUM(FCT.derrotas) AS D,
+                (SUM(FCT.vitorias) * 3 + SUM(FCT.empates)) AS Pts,
+                SUM(FCT.gols_marcados) AS GP,
+                SUM(FCT.gols_sofridos) AS GC,
+                (SUM(FCT.gols_marcados) - SUM(FCT.gols_sofridos)) AS SG
+            FROM
+                fato_estatisticas_clube_temporal AS FCT
+            JOIN
+                dim_time AS T ON FCT.id_time = T.id_time
+            JOIN
+                dim_tempo AS DT ON FCT.id_tempo = DT.id_tempo
+            WHERE
+                DT.id_tempo = ? 
+            GROUP BY
+                T.nome, T.logo_url_time
+            ORDER BY
+                Pts DESC, V DESC, SG DESC;
+        `;
+        
+        const data = await executeQuery(sql, [id_tempo]);
+        res.json(data);
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Inicia o servidor
 app.listen(port, () => {
