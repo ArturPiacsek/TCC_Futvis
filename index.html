@@ -10,42 +10,50 @@
 
     <h1>Dashboard de Análise de Jogadores ⚽</h1>
 
+     <div class="filtro-geral-container" style="display: flex; gap: 20px; margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div>
+            <label for="time-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Time:</label>
+            <select id="time-filter">
+                <option value="">-- Todos os Times --</option>
+                </select>
+        </div>
+        <div>
+            <label for="temporada-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Temporada:</label>
+            <select id="temporada-filter">
+                <option value="">-- Todos os Anos (Acumulado) --</option>
+                </select>
+        </div>
+    </div>
+
     <div class="grid-container">
         <div class="chart-container">
-            <h2>Top 10 Artilheiros</h2>
+            <h2>Top 10 Artilheiros</h2>            
             <div id="artilheiros-chart"></div>
         </div>
         <div class="chart-container">
-            <h2>Top 10 Assistências</h2>
+            <h2>Top 10 Assistências</h2>           
             <div id="assistencias-chart"></div>
         </div>
         <div class="chart-container">
-            <h2>Top 10 Participações em Gols</h2>
+            <h2>Top 10 Participações em Gols</h2>            
             <div id="participacoes-chart"></div>
         </div>
         <div class="chart-container">
-            <h2>Eficiência (Minutos por Gol)</h2>
+            <h2>Eficiência (Minutos por Gol)</h2>            
             <div id="eficiencia-table"></div>
         </div>
         <div class="chart-container">
-            <h2>Disciplina (Cartões)</h2>
+            <h2>Disciplina (Cartões)</h2>            
             <div id="disciplina-table"></div>
         </div>
-        <div class="chart-container" style="grid-column: 1 / -1;"> <h2>Tabela do Campeonato</h2>
-            <div class="filtro-container">
-                <label for="temporada-select">Selecione a Temporada:</label>
-                <select id="temporada-select">
-                    <option value="549">2023</option>
-                    <option value="276">2022</option>
-                    <option value="1">2021</option>
-                </select>
-            </div>
+        <div class="chart-container" style="grid-column: 1 / -1;"> 
+            <h2>Tabela do Campeonato</h2>            
             <div id="tabela-campeonato-table"></div>
         </div>
     </div>
 
+    <div class="tooltip"></div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    
     <script src="app.js"></script>
 
 </body>
