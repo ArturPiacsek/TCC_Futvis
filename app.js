@@ -1,69 +1,78 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
+/**
+ * Função que é chamada QUANDO QUALQUER FILTRO MUDA.
+ * Ela atualiza tanto os gráficos de jogadores quanto a tabela do campeonato.
+ */
+function updateAllVisualizations() {
+    updatePlayerCharts();
+    fetchTabelaCampeonato();
+}
+
+/**
+ * Atualiza todos os gráficos de jogadores com base nos filtros selecionados.
+ */
+function updatePlayerCharts() {
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+
+    const queryParams = [];
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+    console.log(`Atualizando gráficos de jogadores com: ${queryString}`);
+
+    fetchAndDrawChart(`${API_BASE_URL}/artilheiros${queryString}`, "#artilheiros-chart", "Gols", "nome_jogador", "total");
+    fetchAndDrawChart(`${API_BASE_URL}/assistencias${queryString}`, "#assistencias-chart", "Assistências", "nome_jogador", "total");
+    fetchAndDrawChart(`${API_BASE_URL}/participacoes-gol${queryString}`, "#participacoes-chart", "Participações", "nome_jogador", "total");
+    fetchAndDrawTable(`${API_BASE_URL}/eficiencia-minutos-gol${queryString}`, "#eficiencia-table", ["Jogador", "Gols", "Minutos", "Minutos / Gol"], ["nome_jogador", "total_gols", "total_minutos", "minutos_por_gol"]);
+    fetchAndDrawTable(`${API_BASE_URL}/disciplina${queryString}`, "#disciplina-table", ["Jogador", "Amarelos 🟨", "Vermelhos 🟥"], ["nome_jogador", "amarelos", "vermelhos"]);
+}
+
+/**
+ * Busca e desenha a tabela do campeonato com base no filtro de temporada.
+ */
 function fetchTabelaCampeonato() {
-    const selectElement = document.querySelector('#temporada-select');
-    const selectedIdTempo = selectElement.value; // A variável agora tem um nome mais claro
+    // Agora lê do filtro global. Se nenhum for selecionado, usa o ID padrão (549 - 2023).
+    const selectedIdTempo = document.querySelector('#temporada-filter').value || '549';
+    
+    console.log(`Atualizando tabela do campeonato para id_tempo: ${selectedIdTempo}`);
     
     const headers = ["#", "Time", "Pts", "PJ", "V", "E", "D", "GP", "GC", "SG"];
     const keys = ["posicao", "nome", "Pts", "PJ", "V", "E", "D", "GP", "GC", "SG"];
-
     const apiUrl = `${API_BASE_URL}/tabela-campeonato?id_tempo=${selectedIdTempo}`;
-    
-    fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-
-            const dataComPosicao = data.map((time, index) => ({
-                ...time,
-                posicao: index + 1
-            }));
-
-            createTable(dataComPosicao, "#tabela-campeonato-table", headers, keys);
-        })
-        .catch(error => {
-            console.error(`Erro ao carregar dados de ${apiUrl}:`, error);
-            document.querySelector("#tabela-campeonato-table").innerHTML = `<p class="error-message">Não foi possível carregar os dados.</p>`;
-        });
+    fetchAndDrawTable(apiUrl, "#tabela-campeonato-table", headers, keys);
 }
 
-function carregarTimes() {
-    const selectElement = document.querySelector('#clube-select');
-
+/**
+ * Popula os menus de filtro buscando os dados da API.
+ */
+function populateFilters() {
+    // Popula filtro de times
     fetch(`${API_BASE_URL}/times`)
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(time => {
-                const option = document.createElement('option');
-                option.value = time.id_time;
-                option.innerText = time.nome;
-                selectElement.appendChild(option);
+        .then(res => res.json())
+        .then(teams => {
+            const select = document.querySelector('#time-filter');
+            teams.forEach(team => {
+                select.innerHTML += `<option value="${team.id_time}">${team.nome}</option>`;
             });
-        })
-        .catch(error => {
-            console.error("Erro ao carregar os times:", error);
+        });
+
+    // Popula filtro de temporadas (agora só com os 3 valores válidos)
+    fetch(`${API_BASE_URL}/temporadas`)
+        .then(res => res.json())
+        .then(temporadas => {
+            const select = document.querySelector('#temporada-filter');
+            temporadas.forEach(temp => {
+                select.innerHTML += `<option value="${temp.id_tempo}">${temp.ano}</option>`;
+            });
         });
 }
 
-// Função para carregar as estatísticas de jogadores por time e temporada
-function carregarEstatisticasPorTime(id_time, id_tempo) {
-    const headers = ["Jogador", "Gols", "Assistências", "Cartões Amarelos", "Cartões Vermelhos"];
-    const keys = ["nome_jogador", "total_gols", "total_assistencias", "total_amarelos", "total_vermelhos"];
-
-    const apiUrl = `${API_BASE_URL}/estatisticas-jogador?time_id=${id_time}&id_tempo=${id_tempo}`;
-
-    fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            createTable(data, "#estatisticas-jogadores-table", headers, keys);
-        })
-        .catch(error => {
-            console.error("Erro ao carregar as estatísticas dos jogadores:", error);
-            document.querySelector("#estatisticas-jogadores-table").innerHTML = `<p class="error-message">Não foi possível carregar os dados.</p>`;
-        })
-}
-
-// Função genérica para buscar dados e desenhar um GRÁFICO DE BARRAS
+// ----- FUNÇÕES GENÉRICAS (Cole suas funções aqui) -----
+// ... As funções fetchAndDrawChart, fetchAndDrawTable, createBarChart, createTable ...
+// (As mesmas do exemplo anterior)
 function fetchAndDrawChart(apiUrl, selector, yAxisLabel, xKey, yKey) {
     fetch(apiUrl)
         .then(response => response.json())
@@ -77,13 +86,17 @@ function fetchAndDrawChart(apiUrl, selector, yAxisLabel, xKey, yKey) {
         });
 }
 
-// Função genérica para buscar dados e desenhar uma TABELA
 function fetchAndDrawTable(apiUrl, selector, headers, keys) {
     fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
             if (data.error) throw new Error(data.error);
-            createTable(data, selector, headers, keys);
+            if (headers.includes('#')) {
+                const dataComPosicao = data.map((item, index) => ({ ...item, posicao: index + 1 }));
+                createTable(dataComPosicao, selector, headers, keys);
+            } else {
+                createTable(data, selector, headers, keys);
+            }
         })
         .catch(error => {
             console.error(`Erro ao carregar dados de ${apiUrl}:`, error);
@@ -91,12 +104,19 @@ function fetchAndDrawTable(apiUrl, selector, headers, keys) {
         });
 }
 
-// Função de D3 para criar um gráfico de barras genérico
+// app.js
+
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
     const container = d3.select(selector);
-    container.html(""); // Limpa o container antes de desenhar
+    container.html(""); // Limpa o container
 
-    const margin = { top: 20, right: 30, bottom: 100, left: 50 };
+    // Adiciona uma mensagem se não houver dados
+    if (data.length === 0) {
+        container.html("<p>Nenhum dado encontrado para esta combinação de filtros.</p>");
+        return;
+    }
+
+    const margin = { top: 30, right: 30, bottom: 100, left: 50 };
     const width = 450 - margin.left - margin.right;
     const height = 300 - margin.top - margin.bottom;
 
@@ -104,16 +124,24 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
         .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
       .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+    // Seleciona o nosso div de tooltip
+    const tooltip = d3.select('.tooltip');
+
+    // 1. CORREÇÃO DO EIXO Y
+    // Usamos o operador '+' para garantir que o valor seja tratado como NÚMERO
+    // Multiplicamos por 1.1 para dar um espaço extra no topo do gráfico
+    const yMax = d3.max(data, d => +d[yKey]);
+    const yScale = d3.scaleLinear()
+        .domain([0, yMax * 1.1 || 10])
+        .range([height, 0]);
 
     const xScale = d3.scaleBand()
         .domain(data.map(d => d[xKey]))
         .range([0, width])
         .padding(0.2);
 
-    const yScale = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d[yKey])])
-        .range([height, 0]);
-
+    // Desenha os eixos
     svg.append("g")
         .attr("transform", `translate(0, ${height})`)
         .call(d3.axisBottom(xScale))
@@ -121,97 +149,88 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
         .attr("transform", "translate(-10,0)rotate(-45)")
         .style("text-anchor", "end");
 
-    svg.append("g")
-        .call(d3.axisLeft(yScale).ticks(5));
+    svg.append("g").call(d3.axisLeft(yScale).ticks(5));
 
+    // Desenha as barras
     svg.selectAll(".bar")
         .data(data)
         .enter()
         .append("rect")
         .attr("class", "bar")
         .attr("x", d => xScale(d[xKey]))
-        .attr("y", d => yScale(d[yKey]))
+        .attr("y", d => yScale(+d[yKey]))
         .attr("width", xScale.bandwidth())
-        .attr("height", d => height - yScale(d[yKey]));
+        .attr("height", d => height - yScale(+d[yKey]))
+        
+        // 2. MELHORIA: ADICIONANDO EVENTOS DE MOUSE (TOOLTIP)
+        .on('mouseover', function(event, d) {
+            // Aumenta a opacidade da barra para dar feedback
+            d3.select(this).style('opacity', 0.7);
+
+            // Torna o tooltip visível
+            tooltip.style('opacity', 1);
+
+            // Define o conteúdo e a posição do tooltip
+            tooltip.html(`${xKey.replace(/_/g, ' ')}: <strong>${d[xKey]}</strong><br>${yAxisLabel}: <strong>${d[yKey]}</strong>`)
+                .style('left', (event.pageX + 15) + 'px')
+                .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mouseout', function() {
+            // Restaura a opacidade da barra
+            d3.select(this).style('opacity', 1);
+            // Esconde o tooltip
+            tooltip.style('opacity', 0);
+        });
+
+    // 3. MELHORIA: ADICIONANDO RÓTULOS (VALOR EM CIMA DA BARRA)
+    svg.selectAll(".bar-label")
+        .data(data)
+        .enter()
+        .append("text")
+        .attr("class", "bar-label")
+        .attr("x", d => xScale(d[xKey]) + xScale.bandwidth() / 2) // Centraliza o texto no meio da barra
+        .attr("y", d => yScale(+d[yKey]) - 5) // Posiciona um pouco acima da barra
+        .text(d => d[yKey]);
 }
 
-// Função de D3 para criar uma tabela genérica
 function createTable(data, selector, headers, keys) {
     const container = d3.select(selector);
-    container.html(""); // Limpa o container antes de desenhar
+    container.html("");
+    
+    if (data.length === 0) {
+        container.html("<p>Nenhum dado encontrado para esta combinação de filtros.</p>");
+        return;
+    }
 
     const table = container.append("table");
     const thead = table.append("thead");
     const tbody = table.append("tbody");
 
-    // Cria o cabeçalho
-    thead.append("tr")
-        .selectAll("th")
-        .data(headers)
-        .enter()
-        .append("th")
-        .text(d => d);
+    thead.append("tr").selectAll("th").data(headers).enter().append("th").text(d => d);
+    const rows = tbody.selectAll("tr").data(data).enter().append("tr");
 
-    // Cria as linhas de dados
-    const rows = tbody.selectAll("tr")
-        .data(data)
-        .enter()
-        .append("tr");
-
-    // Cria as células para cada linha
     rows.selectAll("td")
-        .data(rowData => {
-            // Para cada linha de dados, criamos um array de objetos para as células,
-            // mantendo a chave e o valor. Isso nos dá mais controle.
-            return keys.map(key => ({ key: key, value: rowData[key], fullData: rowData }));
-        })
-        .enter()
-        .append("td")
+        .data(rowData => keys.map(key => ({ key: key, value: rowData[key], fullData: rowData })))
+        .enter().append("td")
         .html(cellData => {
-            // Agora, para cada célula, verificamos qual é a sua "chave" (key)
             if (cellData.key === 'nome') {
-                // Se for a célula do nome do time, inserimos o HTML com a imagem e o nome
                 return `<img src="${cellData.fullData.logo_url_time}" class="team-logo" referrerpolicy="no-referrer"> ${cellData.value}`;
-            } else {
-                // Para todas as outras células, apenas inserimos o texto do valor
-                return cellData.value;
             }
+            return cellData.value;
         });
 }
 
+
+// ----- INICIALIZAÇÃO DA PÁGINA -----
+
 document.addEventListener('DOMContentLoaded', () => {
-    carregarTimes();
-
-    // Tabela padrão é a de 2023
-    fetchTabelaCampeonato();
-
-    // Adiciona um "ouvinte de eventos" para a mudança de temporada
-    document.querySelector('#temporada-select').addEventListener('change', () => {
-        fetchTabelaCampeonato();  // Recarrega a tabela com a nova temporada
-        
-        const id_time = document.querySelector('#clube-select').value;
-        const id_tempo = document.querySelector('#temporada-select').value;
-        carregarEstatisticasPorTime(id_time, id_tempo); // Recarrega as estatísticas com o time e a temporada atual
-    });
-
-    // Adiciona um "ouvinte de eventos" para a mudança de time
-    document.querySelector('#clube-select').addEventListener('change', () => {
-        const id_time = document.querySelector('#clube-select').value;
-        const id_tempo = document.querySelector('#temporada-select').value;
-        carregarEstatisticasPorTime(id_time, id_tempo); // Recarregar as estatísticas com o time e a temporada atual
-    });
-
-    fetchAndDrawChart(`${API_BASE_URL}/artilheiros`, "#artilheiros-chart", "Gols", "nome_jogador", "total");
-    fetchAndDrawChart(`${API_BASE_URL}/assistencias`, "#assistencias-chart", "Assistências", "nome_jogador", "total");
-    fetchAndDrawChart(`${API_BASE_URL}/participacoes-gol`, "#participacoes-chart", "Participações", "nome_jogador", "total");
+    // 1. Popula os filtros
+    populateFilters();
     
-    fetchAndDrawTable(`${API_BASE_URL}/eficiencia-minutos-gol`, "#eficiencia-table", 
-        ["Jogador", "Gols", "Minutos", "Minutos / Gol"], 
-        ["nome_jogador", "total_gols", "total_minutos", "minutos_por_gol"]
-    );
-    
-    fetchAndDrawTable(`${API_BASE_URL}/disciplina`, "#disciplina-table", 
-        ["Jogador", "Amarelos 🟨", "Vermelhos 🟥"], 
-        ["nome_jogador", "amarelos", "vermelhos"]
-    );
+    // 2. Carrega tudo pela primeira vez
+    updateAllVisualizations();
+
+    // 3. Adiciona os eventos que atualizam TUDO sempre que QUALQUER filtro mudar
+    document.querySelector('#time-filter').addEventListener('change', updateAllVisualizations);
+    document.querySelector('#temporada-filter').addEventListener('change', updateAllVisualizations);
 });
