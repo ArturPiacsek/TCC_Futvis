@@ -164,6 +164,22 @@ app.get('/api/tabela-campeonato', async (req, res) => {
     }
 });
 
+// Rota 7: Lista de times
+app.get('/api/times', async (req, res) => {
+    try {
+        const sql = `
+            SELECT id_time, nome, logo_url_time
+            FROM dim_time
+            ORDER BY nome;
+        `;
+
+        const data = await executeQuery(sql);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Inicia o servidor
 app.listen(port, () => {
     console.log(`Servidor da API rodando em http://localhost:${port}`);

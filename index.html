@@ -13,25 +13,56 @@
     <div class="grid-container">
         <div class="chart-container">
             <h2>Top 10 Artilheiros</h2>
+            <div class="filtro-container">
+                <label for="clube-select-artilheiros">Selecione o Clube:</label>
+                <select id="clube-select-artilheiros">
+                    <option value="">Selecione um time</option>
+                </select>
+            </div>
             <div id="artilheiros-chart"></div>
         </div>
         <div class="chart-container">
             <h2>Top 10 Assistências</h2>
+            <div class="filtro-container">
+                <label for="clube-select-assistencias">Selecione o Clube:</label>
+                <select id="clube-select-assistencias">
+                    <option value="">Selecione um time</option>
+                </select>
+            </div>
             <div id="assistencias-chart"></div>
         </div>
         <div class="chart-container">
             <h2>Top 10 Participações em Gols</h2>
+            <div class="filtro-container">
+                <label for="clube-select-participacoes">Selecione o Clube:</label>
+                <select id="clube-select-participacoes">
+                    <option value="">Selecione um time</option>
+                </select>
+            </div>
             <div id="participacoes-chart"></div>
         </div>
         <div class="chart-container">
             <h2>Eficiência (Minutos por Gol)</h2>
+            <div class="filtro-container">
+                <label for="clube-select-eficiencia">Selecione o Clube:</label>
+                <select id="clube-select-eficiencia">
+                    <option value="">Selecione um time</option>
+                </select>
+            </div>
             <div id="eficiencia-table"></div>
         </div>
         <div class="chart-container">
             <h2>Disciplina (Cartões)</h2>
+            <div class="filtro-container">
+                <label for="clube-select-disciplina">Selecione o Clube:</label>
+                <select id="clube-select-disciplina">
+                    <option value="">Selecione um time</option>
+                </select>
+            </div>
             <div id="disciplina-table"></div>
         </div>
-        <div class="chart-container" style="grid-column: 1 / -1;"> <h2>Tabela do Campeonato</h2>
+        <div class="chart-container" style="grid-column: 1 / -1;"> 
+            <h2>Tabela do Campeonato</h2>
             <div class="filtro-container">
                 <label for="temporada-select">Selecione a Temporada:</label>
                 <select id="temporada-select">
@@ -45,7 +76,6 @@
     </div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    
     <script src="app.js"></script>
 
 </body>

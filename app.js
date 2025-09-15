@@ -27,28 +27,41 @@ function fetchTabelaCampeonato() {
         });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Chamar todas as funções de carregamento de dados
-    fetchAndDrawChart(`${API_BASE_URL}/artilheiros`, "#artilheiros-chart", "Gols", "nome_jogador", "total");
-    fetchAndDrawChart(`${API_BASE_URL}/assistencias`, "#assistencias-chart", "Assistências", "nome_jogador", "total");
-    fetchAndDrawChart(`${API_BASE_URL}/participacoes-gol`, "#participacoes-chart", "Participações", "nome_jogador", "total");
-    
-    fetchAndDrawTable(`${API_BASE_URL}/eficiencia-minutos-gol`, "#eficiencia-table", 
-        ["Jogador", "Gols", "Minutos", "Minutos / Gol"], 
-        ["nome_jogador", "total_gols", "total_minutos", "minutos_por_gol"]
-    );
-    
-    fetchAndDrawTable(`${API_BASE_URL}/disciplina`, "#disciplina-table", 
-        ["Jogador", "Amarelos 🟨", "Vermelhos 🟥"], 
-        ["nome_jogador", "amarelos", "vermelhos"]
-    );
+function carregarTimes() {
+    const selectElement = document.querySelector('#clube-select');
 
-    // 1. Carrega a tabela do campeonato pela primeira vez com a temporada padrão
-    fetchTabelaCampeonato();
+    fetch(`${API_BASE_URL}/times`)
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(time => {
+                const option = document.createElement('option');
+                option.value = time.id_time;
+                option.innerText = time.nome;
+                selectElement.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error("Erro ao carregar os times:", error);
+        });
+}
 
-    // 2. Adiciona um "ouvinte de eventos" que chama a função de novo toda vez que o usuário MUDA a seleção
-    document.querySelector('#temporada-select').addEventListener('change', fetchTabelaCampeonato);
-});
+// Função para carregar as estatísticas de jogadores por time e temporada
+function carregarEstatisticasPorTime(id_time, id_tempo) {
+    const headers = ["Jogador", "Gols", "Assistências", "Cartões Amarelos", "Cartões Vermelhos"];
+    const keys = ["nome_jogador", "total_gols", "total_assistencias", "total_amarelos", "total_vermelhos"];
+
+    const apiUrl = `${API_BASE_URL}/estatisticas-jogador?time_id=${id_time}&id_tempo=${id_tempo}`;
+
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            createTable(data, "#estatisticas-jogadores-table", headers, keys);
+        })
+        .catch(error => {
+            console.error("Erro ao carregar as estatísticas dos jogadores:", error);
+            document.querySelector("#estatisticas-jogadores-table").innerHTML = `<p class="error-message">Não foi possível carregar os dados.</p>`;
+        })
+}
 
 // Função genérica para buscar dados e desenhar um GRÁFICO DE BARRAS
 function fetchAndDrawChart(apiUrl, selector, yAxisLabel, xKey, yKey) {
@@ -77,7 +90,6 @@ function fetchAndDrawTable(apiUrl, selector, headers, keys) {
             document.querySelector(selector).innerHTML = `<p class="error-message">Não foi possível carregar os dados.</p>`;
         });
 }
-
 
 // Função de D3 para criar um gráfico de barras genérico
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
@@ -166,3 +178,40 @@ function createTable(data, selector, headers, keys) {
             }
         });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    carregarTimes();
+
+    // Tabela padrão é a de 2023
+    fetchTabelaCampeonato();
+
+    // Adiciona um "ouvinte de eventos" para a mudança de temporada
+    document.querySelector('#temporada-select').addEventListener('change', () => {
+        fetchTabelaCampeonato();  // Recarrega a tabela com a nova temporada
+        
+        const id_time = document.querySelector('#clube-select').value;
+        const id_tempo = document.querySelector('#temporada-select').value;
+        carregarEstatisticasPorTime(id_time, id_tempo); // Recarrega as estatísticas com o time e a temporada atual
+    });
+
+    // Adiciona um "ouvinte de eventos" para a mudança de time
+    document.querySelector('#clube-select').addEventListener('change', () => {
+        const id_time = document.querySelector('#clube-select').value;
+        const id_tempo = document.querySelector('#temporada-select').value;
+        carregarEstatisticasPorTime(id_time, id_tempo); // Recarregar as estatísticas com o time e a temporada atual
+    });
+
+    fetchAndDrawChart(`${API_BASE_URL}/artilheiros`, "#artilheiros-chart", "Gols", "nome_jogador", "total");
+    fetchAndDrawChart(`${API_BASE_URL}/assistencias`, "#assistencias-chart", "Assistências", "nome_jogador", "total");
+    fetchAndDrawChart(`${API_BASE_URL}/participacoes-gol`, "#participacoes-chart", "Participações", "nome_jogador", "total");
+    
+    fetchAndDrawTable(`${API_BASE_URL}/eficiencia-minutos-gol`, "#eficiencia-table", 
+        ["Jogador", "Gols", "Minutos", "Minutos / Gol"], 
+        ["nome_jogador", "total_gols", "total_minutos", "minutos_por_gol"]
+    );
+    
+    fetchAndDrawTable(`${API_BASE_URL}/disciplina`, "#disciplina-table", 
+        ["Jogador", "Amarelos 🟨", "Vermelhos 🟥"], 
+        ["nome_jogador", "amarelos", "vermelhos"]
+    );
+});
