@@ -7,6 +7,7 @@ const API_BASE_URL = 'http://localhost:3000/api';
 function updateAllVisualizations() {
     updatePlayerCharts();
     fetchTabelaCampeonato();
+    loadTemporalAnalysisCharts();
 }
 
 /**
@@ -70,6 +71,25 @@ function populateFilters() {
         });
 }
 
+function loadTemporalAnalysisCharts() {
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const teamQueryParam = selectedTeamId ? `?id_time=${selectedTeamId}` : '';
+
+    fetch(`${API_BASE_URL}/analise-temporal${teamQueryParam}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                createMultiLineChart(data);
+                createStackedAreaChart(data);
+            } else {
+                // Limpa os gráficos se não houver dados
+                d3.select("#multi-line-chart").html("<p>Nenhum dado encontrado para este time.</p>");
+                d3.select("#stacked-area-chart").html("<p>Nenhum dado encontrado para este time.</p>");
+            }
+        })
+        .catch(error => console.error('Erro ao carregar dados para análise temporal:', error));
+}
+
 // ----- FUNÇÕES GENÉRICAS (Cole suas funções aqui) -----
 // ... As funções fetchAndDrawChart, fetchAndDrawTable, createBarChart, createTable ...
 // (As mesmas do exemplo anterior)
@@ -103,8 +123,6 @@ function fetchAndDrawTable(apiUrl, selector, headers, keys) {
             document.querySelector(selector).innerHTML = `<p class="error-message">Não foi possível carregar os dados.</p>`;
         });
 }
-
-// app.js
 
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
     const container = d3.select(selector);
@@ -220,17 +238,171 @@ function createTable(data, selector, headers, keys) {
         });
 }
 
+// GRÁFICO DE LINHAS MÚLTIPLAS
+
+function createMultiLineChart(data) {
+    const isTeamSpecific = data.length > 0 && data[0].hasOwnProperty('pct_vitorias');
+    const yAxisLabel = isTeamSpecific ? "Média de Gols Marcados" : "Média de Gols por Jogo (Liga)";
+
+    const selector = "#multi-line-chart";
+    const container = d3.select(selector);
+    container.html("");
+
+    const margin = { top: 20, right: 100, bottom: 50, left: 100 }; 
+    const width = 1000 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);    
+    
+    const tooltip = d3.select('.tooltip');
+    const dataAgrupada = d3.group(data, d => d.temporada);
+
+    const xScale = d3.scaleLinear().domain([4, 12]).range([0, width]);
+
+    // Encontra o valor mínimo e máximo antes para deixar o código mais limpo.
+    const yMin = d3.min(data, d => d.media_gols_por_jogo);
+    const yMax = d3.max(data, d => d.media_gols_por_jogo);
+    // Defina a escala usando esses valores dinâmicos
+    const yScale = d3.scaleLinear()
+    .domain([yMin * 0.9, yMax * 1.1]) //Mínimo e Máximo agora são dinâmicos!
+    .range([height, 0]);
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale).ticks(9).tickFormat(d3.format("d")));
+    svg.append("g").call(d3.axisLeft(yScale));
+    svg.append("text").attr("x", width / 2).attr("y", height + 40).text("Mês").style("text-anchor", "middle");
+    // Usamos a label dinâmica aqui
+    svg.append("text").attr("transform", "rotate(-90)").attr("y", -45).attr("x", -height / 2).text(yAxisLabel).style("text-anchor", "middle");
+
+    const lineGenerator = d3.line().x(d => xScale(d.mes)).y(d => yScale(d.media_gols_por_jogo));
+
+    svg.selectAll(".line").data(dataAgrupada).enter().append("path").attr("fill", "none").attr("stroke", d => colorScale(d[0])).attr("stroke-width", 2.5).attr("d", d => lineGenerator(d[1]));
+
+    const legend = svg.selectAll(".legend").data(dataAgrupada.keys()).enter().append("g").attr("class", "legend").attr("transform", (d, i) => `translate(0,${i * 20})`);
+    legend.append("rect").attr("x", width + 5).attr("width", 18).attr("height", 18).style("fill", d => colorScale(d));
+    legend.append("text").attr("x", width + 30).attr("y", 9).attr("dy", ".35em").text(d => `${d}`).style("text-anchor", "start");
+
+    const focusLine = svg.append("line").attr("class", "focus-line").style("stroke", "#999").style("stroke-width", 1).style("stroke-dasharray", "3,3").style("opacity", 0);
+    const focusCircles = svg.append("g").selectAll(".focus-circle").data(dataAgrupada.keys()).enter().append("circle").attr("r", 5).style("fill", d => colorScale(d)).style("stroke", "white").style("opacity", 0);
+    svg.append("rect").attr("class", "overlay").attr("width", width).attr("height", height).style("fill", "none").style("pointer-events", "all")
+        .on("mouseover", () => { focusLine.style("opacity", 1); focusCircles.style("opacity", 1); tooltip.style('opacity', 1); })
+        .on("mouseout", () => { focusLine.style("opacity", 0); focusCircles.style("opacity", 0); tooltip.style('opacity', 0); })
+        .on("mousemove", (event) => {
+            const mouseX = d3.pointer(event)[0];
+            const xValue = Math.round(xScale.invert(mouseX));
+            if (xValue >= 1 && xValue <= 12) {
+                focusLine.attr("x1", xScale(xValue)).attr("x2", xScale(xValue)).attr("y1", 0).attr("y2", height);
+                let tooltipContent = `<strong>Mês: ${xValue}</strong><br/>`;
+                focusCircles.each(function(temporada) {
+                    const d = [...dataAgrupada.get(temporada)].find(item => item.mes === xValue);
+                    if (d) {
+                        d3.select(this).attr("cx", xScale(d.mes)).attr("cy", yScale(d.media_gols_por_jogo)).style("opacity", 1);
+                        tooltipContent += `<span style="color:${colorScale(temporada)};">●</span> ${temporada}: ${d.media_gols_por_jogo}<br/>`;
+                    } else {
+                        d3.select(this).style("opacity", 0);
+                    }
+                });
+                tooltip.html(tooltipContent).style('left', (event.pageX + 15) + 'px').style('top', (event.pageY) + 'px');
+            }
+        });
+}
+
+
+function createStackedAreaChart(data) {
+    const selector = "#stacked-area-chart";
+    const container = d3.select(selector);
+    container.html("");
+
+    const isTeamSpecific = data.length > 0 && data[0].hasOwnProperty('pct_vitorias');
+
+    // Define chaves, cores e legendas dinamicamente
+    const keys = isTeamSpecific ?
+        ["pct_vitorias", "pct_empates", "pct_derrotas"] :
+        ["pct_vitorias_casa", "pct_vitorias_fora", "pct_empates"];
+
+    const colorRange = isTeamSpecific ?
+        ['#2ca02c', '#7f7f7f', '#d62728'] : // Verde (V), Cinza (E), Vermelho (D)
+        ['#1f77b4', '#ff7f0e', '#2ca02c']; // Cores originais
+
+    const legendLabels = isTeamSpecific ?
+        { pct_vitorias: "Vitórias", pct_empates: "Empates", pct_derrotas: "Derrotas" } :
+        { pct_vitorias_casa: "Mandante", pct_vitorias_fora: "Visitante", pct_empates: "Empates" };
+
+    const margin = { top: 20, right: 150, bottom: 50, left: 100 }; // Aumentei a margem direita
+    const width = 1000 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+        
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+    const tooltip = d3.select('.tooltip');
+
+    const formattedData = data.map(d => ({ date: new Date(d.temporada, d.mes - 1), ...d }));
+    
+    const stack = d3.stack().keys(keys);
+    const stackedData = stack(formattedData);
+
+    const xScale = d3.scaleTime().domain(d3.extent(formattedData, d => d.date)).range([0, width]);
+    const yScale = d3.scaleLinear().domain([0, 100]).range([height, 0]);
+    const colorScale = d3.scaleOrdinal().domain(keys).range(colorRange);
+
+    const areaGenerator = d3.area().x(d => xScale(d.data.date)).y0(d => yScale(d[0])).y1(d => yScale(d[1]));
+
+    svg.selectAll(".area").data(stackedData).enter().append("path").attr("class", "area").style("fill", d => colorScale(d.key)).attr("d", areaGenerator);
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale).ticks(d3.timeYear.every(1)).tickFormat(d3.timeFormat("%Y")));
+    svg.append("g").call(d3.axisLeft(yScale).tickFormat(d => `${d}%`));
+    svg.append("text").attr("x", width / 2).attr("y", height + 40).text("Tempo").style("text-anchor", "middle");
+    svg.append("text").attr("transform", "rotate(-90)").attr("y", -40).attr("x", -height / 2).text("% de Resultados").style("text-anchor", "middle");
+
+    const legend = svg.selectAll(".legend").data(keys).enter().append("g").attr("class", "legend").attr("transform", (d, i) => `translate(0,${i * 20})`);
+    legend.append("rect").attr("x", width + 5).attr("width", 18).attr("height", 18).style("fill", d => colorScale(d));
+    legend.append("text").attr("x", width + 30).attr("y", 9).attr("dy", ".35em").text(d => legendLabels[d]).style("text-anchor", "start");
+
+    const focusLine = svg.append("line").attr("class", "focus-line").style("stroke", "#999").style("stroke-width", 1).style("stroke-dasharray", "3,3").style("opacity", 0);
+    const focusCircles = svg.append("g").selectAll(".focus-circle").data(keys).enter().append("circle").attr("r", 5).style("fill", d => colorScale(d)).style("stroke", "white").style("opacity", 0);
+    const bisectDate = d3.bisector(d => d.date).left;
+
+    svg.append("rect").attr("class", "overlay").attr("width", width).attr("height", height).style("fill", "none").style("pointer-events", "all")
+        .on("mouseover", () => { focusLine.style("opacity", 1); focusCircles.style("opacity", 1); tooltip.style('opacity', 1); })
+        .on("mouseout", () => { focusLine.style("opacity", 0); focusCircles.style("opacity", 0); tooltip.style('opacity', 0); })
+        .on("mousemove", (event) => {
+            const mouseX = d3.pointer(event)[0];
+            const xDate = xScale.invert(mouseX);
+            const index = bisectDate(formattedData, xDate, 1);
+            const d0 = formattedData[index - 1];
+            const d1 = formattedData[index];
+            const d = (d1 && (xDate - d0.date > d1.date - xDate)) ? d1 : d0;
+            if (d) {
+                focusLine.attr("x1", xScale(d.date)).attr("x2", xScale(d.date)).attr("y1", 0).attr("y2", height);
+                let tooltipContent = `<strong>${d3.timeFormat("%b %Y")(d.date)}</strong><br/>`;
+                focusCircles.each(function(key) {
+                    const series = stackedData.find(s => s.key === key);
+                    const point = series[formattedData.indexOf(d)];
+                    d3.select(this).attr("cx", xScale(d.date)).attr("cy", yScale(point[1])).style("opacity", 1);
+                    tooltipContent += `<span style="color:${colorScale(key)};">●</span> ${legendLabels[key]}: ${d[key]}%<br/>`;
+                });
+                tooltip.html(tooltipContent).style('left', (event.pageX + 15) + 'px').style('top', (event.pageY) + 'px');
+            }
+        });
+}
 
 // ----- INICIALIZAÇÃO DA PÁGINA -----
-
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Popula os filtros
     populateFilters();
-    
-    // 2. Carrega tudo pela primeira vez
-    updateAllVisualizations();
+    updateAllVisualizations(); // Esta função agora carrega TUDO
 
-    // 3. Adiciona os eventos que atualizam TUDO sempre que QUALQUER filtro mudar
+    // O evento de 'change' para o filtro de time já chama a função correta
     document.querySelector('#time-filter').addEventListener('change', updateAllVisualizations);
-    document.querySelector('#temporada-filter').addEventListener('change', updateAllVisualizations);
+    
+    // O evento do filtro de temporada deve atualizar tudo, exceto os gráficos de jogadores
+    document.querySelector('#temporada-filter').addEventListener('change', () => {
+        updatePlayerCharts(); // Mantém a lógica anterior
+        fetchTabelaCampeonato();
+        // Não chamamos loadTemporalAnalysisCharts aqui, pois ele não usa o filtro de temporada.
+    });
 });

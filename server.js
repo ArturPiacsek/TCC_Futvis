@@ -26,7 +26,7 @@ async function executeQuery(sql, params = []) {
     return rows;
 }
 
-// Rota 1: Top 10 Artilheiros (MODIFICADA PARA MÚLTIPLOS FILTROS)
+// Rota 1: Top 10 Artilheiros
 app.get('/api/artilheiros', async (req, res) => {
     try {
         const { id_time, id_tempo } = req.query; // Pega ambos os filtros da URL
@@ -124,7 +124,7 @@ app.get('/api/assistencias', async (req, res) => {
 // Rota 3: Eficiência (Minutos para marcar um gol)
 app.get('/api/eficiencia-minutos-gol', async (req, res) => {
     try {
-        const { id_time, id_tempo } = req.query; // Pega ambos os filtros
+        const { id_time, id_tempo } = req.query;
 
         // Início da query
         let sql = `
@@ -140,16 +140,16 @@ app.get('/api/eficiencia-minutos-gol', async (req, res) => {
         const params = [];
         const whereClauses = [];
 
-        // 1. Adiciona a condição PERMANENTE desta rota
+        // Adiciona a condição PERMANENTE desta rota
         whereClauses.push(`f.gols > 0`);
 
-        // 2. Adiciona o filtro de time, se existir
+        // Adiciona o filtro de time, se existir
         if (id_time) {
             whereClauses.push(`f.id_clube = ?`);
             params.push(id_time);
         }
 
-        // 3. Adiciona a lógica de filtro para a temporada
+        // Adiciona a lógica de filtro para a temporada
         if (id_tempo) {
             // Se um ano específico foi selecionado
             whereClauses.push(`f.id_tempo = ?`);
@@ -160,10 +160,10 @@ app.get('/api/eficiencia-minutos-gol', async (req, res) => {
             params.push(...[1, 276, 549]);
         }
 
-        // 4. Junta todas as condições com AND e adiciona ao SQL
+        // Junta todas as condições com AND e adiciona ao SQL
         sql += ` WHERE ${whereClauses.join(' AND ')}`;
 
-        // 5. Adiciona o resto da query (GROUP BY, HAVING, etc.)
+        // Adiciona o resto da query
         sql += `
             GROUP BY j.nome_jogador
             HAVING SUM(f.minutos_jogados) > 500
@@ -312,7 +312,79 @@ app.get('/api/tabela-campeonato', async (req, res) => {
     }
 });
 
-// Rota 7: Lista de times
+// Rota 7: analise temporal
+// server.js
+
+app.get('/api/analise-temporal', async (req, res) => {
+    try {
+        const { id_time } = req.query; // Pega o filtro de time da URL
+        let sql;
+        let params = [];
+
+        if (id_time) {
+            // QUERY PARA UM TIME ESPECÍFICO
+            // Usamos a tabela fato_estatisticas_clube_temporal
+            sql = `
+                SELECT
+                    DT.temporada,
+                    DT.mes,                    
+                    ROUND(SUM(FCT.gols_marcados) / SUM(FCT.total_jogos), 2) AS media_gols_por_jogo,                    
+                    ROUND(SUM(FCT.vitorias) * 100.0 / SUM(FCT.total_jogos), 2) AS pct_vitorias,
+                    ROUND(SUM(FCT.derrotas) * 100.0 / SUM(FCT.total_jogos), 2) AS pct_derrotas,
+                    ROUND(SUM(FCT.empates) * 100.0 / SUM(FCT.total_jogos), 2) AS pct_empates
+                FROM
+                    fato_estatisticas_clube_temporal AS FCT
+                JOIN
+                    dim_tempo AS DT ON FCT.id_tempo = DT.id_tempo
+                WHERE
+                    FCT.id_time = ? AND (DT.temporada IS NOT NULL AND DT.mes IS NOT NULL AND DT.dia_semana IS NULL)
+                GROUP BY
+                    DT.temporada, DT.mes
+                ORDER BY
+                    DT.temporada, DT.mes;
+            `;
+            params.push(id_time);
+        } else {
+            // QUERY ORIGINAL PARA A LIGA INTEIRA (sem filtro de time)
+            sql = `
+                SELECT
+                    DT.temporada,
+                    DT.mes,
+                    ROUND(AVG(FTG.media_gols_por_partida), 2) AS media_gols_por_jogo,
+                    ROUND(SUM(FTG.vitorias_mandante) * 100.0 / SUM(FTG.total_partidas), 2) AS pct_vitorias_casa,
+                    ROUND(SUM(FTG.vitorias_visitante) * 100.0 / SUM(FTG.total_partidas), 2) AS pct_vitorias_fora,
+                    ROUND(SUM(FTG.empates) * 100.0 / SUM(FTG.total_partidas), 2) AS pct_empates
+                FROM
+                    fato_temporal_geral AS FTG
+                JOIN
+                    dim_tempo AS DT ON FTG.id_tempo = DT.id_tempo
+                WHERE
+                    (DT.temporada IS NOT NULL and DT.mes is not null and DT.dia_semana is null)
+                GROUP BY
+                    DT.temporada, DT.mes
+                ORDER BY
+                    DT.temporada, DT.mes;
+            `;
+        }
+        
+        const data = await executeQuery(sql, params);
+        // Garante que todos os valores numéricos sejam de fato números
+        const numberedData = data.map(d => {
+            const row = { ...d };
+            for (const key in row) {
+                if (key !== 'temporada' && key !== 'mes' && row[key] !== null) {
+                    row[key] = parseFloat(row[key]);
+                }
+            }
+            return row;
+        });
+        res.json(numberedData);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 8: Lista de times
 app.get('/api/times', async (req, res) => {
     try {
         const sql = `
@@ -328,7 +400,7 @@ app.get('/api/times', async (req, res) => {
     }
 });
 
-// Rota 8: Listar AS TEMPORADAS VÁLIDAS para o filtro
+// Rota 9: Listar AS TEMPORADAS VÁLIDAS para o filtro
 app.get('/api/temporadas', async (req, res) => {
     try {
         // A query agora busca APENAS pelos IDs válidos que você informou.
