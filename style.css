@@ -53,4 +53,38 @@
         font-size: 14px;
         pointer-events: none; /* Impede que o tooltip intercepte os eventos do mouse */
         transition: opacity 0.2s;
-     }
+        }
+    
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .kpi-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #555;
+        }
+        .kpi-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        .kpi-comparison {
+            font-size: 16px;
+        }
+        .kpi-comparison .positive {
+            color: #2ca02c; /* Verde */
+        }
+        .kpi-comparison .negative {
+            color: #d62728; /* Vermelho */
+        }

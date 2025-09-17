@@ -8,8 +8,8 @@
 </head>
 <body>
 
-    <h1>Dashboard de Análise de Jogadores ⚽</h1>
-
+    <h1>Dashboard de Análise de Times ⚽</h1>
+        
      <div class="filtro-geral-container">
         <div>
             <label for="time-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Time:</label>
@@ -24,6 +24,25 @@
                 </select>
         </div>
     </div>
+
+    <div class="kpi-grid">
+    <div class="kpi-card" id="kpi-passes">
+        <h3>Precisão de Passes</h3>
+        <p class="kpi-value">--%</p>
+        <p class="kpi-comparison">-- vs ano anterior</p>
+    </div>
+    <div class="kpi-card" id="kpi-defesas">
+        <h3>Defesas por Jogo</h3>
+        <p class="kpi-value">--</p>
+        <p class="kpi-comparison">-- vs ano anterior</p>
+    </div>
+    <div class="kpi-card" id="kpi-posse">
+        <h3>Posse de Bola</h3>
+        <p class="kpi-value">--%</p>
+        <p class="kpi-comparison">-- vs ano anterior</p>
+    </div>
+</div>
+
 
     <div class="grid-container">
         <div class="chart-container">
@@ -47,7 +66,7 @@
             <div id="disciplina-table"></div>
         </div>
         <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Média de Gols por Mês (Comparativo entre Temporadas)</h2>
+            <h2>Média de Gols Entre Temporadas</h2>
             <div id="multi-line-chart"></div>
         </div>
 

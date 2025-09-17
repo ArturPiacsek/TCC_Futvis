@@ -384,7 +384,72 @@ app.get('/api/analise-temporal', async (req, res) => {
     }
 });
 
-// Rota 8: Lista de times
+// Rota 8: Rota para os KPIs com comparativo anual
+app.get('/api/kpis', async (req, res) => {
+    try {
+        const { id_time, id_tempo } = req.query;
+
+        // Mapeamento de temporada para a temporada anterior
+        const previousTempoMap = {
+            '549': '276', // 2023 -> 2022
+            '276': '1',   // 2022 -> 2021
+            '1': null     // 2021 não tem ano anterior nos dados
+        };
+
+        // Função auxiliar para buscar os dados de um período
+        const getKpiData = async (tempoFilter) => {
+            if (!tempoFilter) return null; // Não busca se não houver período
+
+            let whereClauses = [`FCT.id_tempo = ?`];
+            let params = [tempoFilter];
+
+            if (id_time) {
+                whereClauses.push(`FCT.id_time = ?`);
+                params.push(id_time);
+            }
+
+            const sql = `
+                SELECT
+                    AVG(FCT.media_pct_passes) as passes,
+                    SUM(FCT.defesas_goleiro_total) / SUM(FCT.total_jogos) as defesas,
+                    AVG(FCT.media_posse_bola) as posse
+                FROM fato_estatisticas_clube_temporal AS FCT
+                WHERE ${whereClauses.join(' AND ')};
+            `;
+            const result = await executeQuery(sql, params);
+            // Retorna a primeira linha, ou null se não houver dados
+            return result.length > 0 ? result[0] : null;
+        };
+
+        // Determina o período atual e o anterior
+        const currentTempo = id_tempo || '549'; // Se nenhum ano for selecionado, assume o mais recente (2023)
+        const previousTempo = previousTempoMap[currentTempo];
+
+        // Busca os dados para ambos os períodos em paralelo
+        const [currentData, previousData] = await Promise.all([
+            getKpiData(currentTempo),
+            getKpiData(previousTempo)
+        ]);
+
+        // Formata a resposta
+        const formatResponse = (key) => ({
+             // Se currentData for null, valor é 0. Usamos parseFloat para garantir que é número.
+            current: currentData ? parseFloat(currentData[key] || 0).toFixed(1) : 0,
+            previous: previousData ? parseFloat(previousData[key] || 0).toFixed(1) : null,
+        });
+
+        res.json({
+            passes: formatResponse('passes'),
+            defesas: formatResponse('defesas'),
+            posse: formatResponse('posse'),
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 9: Lista de times
 app.get('/api/times', async (req, res) => {
     try {
         const sql = `
@@ -400,7 +465,7 @@ app.get('/api/times', async (req, res) => {
     }
 });
 
-// Rota 9: Listar AS TEMPORADAS VÁLIDAS para o filtro
+// Rota 10: Listar AS TEMPORADAS VÁLIDAS para o filtro
 app.get('/api/temporadas', async (req, res) => {
     try {
         // A query agora busca APENAS pelos IDs válidos que você informou.

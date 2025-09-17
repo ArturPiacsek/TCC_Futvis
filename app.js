@@ -8,6 +8,7 @@ function updateAllVisualizations() {
     updatePlayerCharts();
     fetchTabelaCampeonato();
     loadTemporalAnalysisCharts();
+    updateKpis();
 }
 
 /**
@@ -391,6 +392,62 @@ function createStackedAreaChart(data) {
         });
 }
 
+function updateKpis() {
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+
+    const queryParams = [];
+    // Nota: O backend assume 2023 se nenhum id_tempo for passado para o comparativo
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
+    
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+    fetch(`${API_BASE_URL}/kpis${queryString}`)
+        .then(res => res.json())
+        .then(data => {
+            updateKpiCard('#kpi-passes', data.passes, '%', true); // higher is better
+            updateKpiCard('#kpi-defesas', data.defesas, '', true); // higher is better
+            updateKpiCard('#kpi-posse', data.posse, '%', true); // higher is better
+        })
+        .catch(error => console.error('Erro ao carregar KPIs:', error));
+}
+
+/**
+ * Função auxiliar para popular um único cartão de KPI.
+ * @param {string} selector - O seletor do cartão (ex: '#kpi-posse').
+ * @param {object} kpiData - O objeto com {current, previous}.
+ * @param {string} suffix - O sufixo do valor (ex: '%').
+ * @param {boolean} higherIsBetter - Define a cor da variação.
+ */
+function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
+    const card = document.querySelector(selector);
+    const valueEl = card.querySelector('.kpi-value');
+    const compEl = card.querySelector('.kpi-comparison');
+
+    valueEl.textContent = `${kpiData.current}${suffix}`;
+
+    if (kpiData.previous === null) {
+        compEl.textContent = 'N/A vs ano anterior';
+        compEl.className = 'kpi-comparison';
+        return;
+    }
+
+    const diff = kpiData.current - kpiData.previous;
+    const percentageChange = (kpiData.previous > 0) ? diff : 0;
+
+    let arrow = percentageChange > 0.01 ? '▲' : (percentageChange < -0.01 ? '▼' : '');
+    let className = '';
+
+    if (arrow === '▲') {
+        className = higherIsBetter ? 'positive' : 'negative';
+    } else if (arrow === '▼') {
+        className = higherIsBetter ? 'negative' : 'positive';
+    }
+
+    compEl.innerHTML = `<span class="${className}">${arrow} ${percentageChange.toFixed(1)}</span> vs ano anterior`;
+}
+
 // ----- INICIALIZAÇÃO DA PÁGINA -----
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
@@ -403,6 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('#temporada-filter').addEventListener('change', () => {
         updatePlayerCharts(); // Mantém a lógica anterior
         fetchTabelaCampeonato();
+        updateKpis();
         // Não chamamos loadTemporalAnalysisCharts aqui, pois ele não usa o filtro de temporada.
     });
 });
