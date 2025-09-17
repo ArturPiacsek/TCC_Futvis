@@ -449,7 +449,60 @@ app.get('/api/kpis', async (req, res) => {
     }
 });
 
-// Rota 9: Lista de times
+// Rota 9: Contagem de jogadores por nacionalidade (para o mapa)
+app.get('/api/jogadores-por-nacionalidade', async (req, res) => {
+    try {
+        const { id_time, id_tempo } = req.query;
+
+        // O JOIN com a tabela fato_jogador_geral agora é sempre necessário
+        // para podermos filtrar por time e/ou tempo.
+        let sql = `
+            SELECT
+                j.nacionalidade,
+                COUNT(DISTINCT j.id_jogador) as total_jogadores
+            FROM dim_jogador j
+            JOIN fato_jogador_geral f ON j.id_jogador = f.id_jogador
+        `;
+        
+        const params = [];
+        const whereClauses = [];
+
+        // Adiciona o filtro de time, se existir
+        if (id_time) {
+            whereClauses.push(`f.id_clube = ?`);
+            params.push(id_time);
+        }
+
+        // Adiciona a lógica de filtro para a temporada
+        if (id_tempo) {
+            // Se um ano específico foi selecionado
+            whereClauses.push(`f.id_tempo = ?`);
+            params.push(id_tempo);
+        } else {
+            // Se for "Acumulado", usa os 3 anos válidos
+            whereClauses.push(`f.id_tempo IN (?, ?, ?)`);
+            params.push(...[1, 276, 549]);
+        }
+
+        // Junta as cláusulas WHERE ao SQL
+        sql += ` WHERE ${whereClauses.join(' AND ')}`;
+
+        // Adiciona o final da query
+        sql += `
+            GROUP BY j.nacionalidade
+            HAVING total_jogadores > 0
+            ORDER BY total_jogadores DESC;
+        `;
+
+        const data = await executeQuery(sql, params);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// Rota 10: Lista de times
 app.get('/api/times', async (req, res) => {
     try {
         const sql = `
@@ -465,7 +518,7 @@ app.get('/api/times', async (req, res) => {
     }
 });
 
-// Rota 10: Listar AS TEMPORADAS VÁLIDAS para o filtro
+// Rota 11: Listar AS TEMPORADAS VÁLIDAS para o filtro
 app.get('/api/temporadas', async (req, res) => {
     try {
         // A query agora busca APENAS pelos IDs válidos que você informou.

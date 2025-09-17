@@ -69,11 +69,14 @@
             <h2>Média de Gols Entre Temporadas</h2>
             <div id="multi-line-chart"></div>
         </div>
-
         <div class="chart-container" style="grid-column: 1 / -1;">
             <h2>Composição dos Resultados (Vitórias, Derrotas e Empates)</h2>
             <div id="stacked-area-chart"></div>
-        </div>
+        </div>        
+        <div class="chart-container" style="grid-column: 1 / -1;">
+            <h2>Distribuição de Jogadores por Nacionalidade</h2>
+            <div id="bubble-map-chart"></div>
+        </div>        
         <div class="chart-container" style="grid-column: 1 / -1;"> 
             <h2>Tabela do Campeonato</h2>            
             <div id="tabela-campeonato-table"></div>
@@ -81,6 +84,7 @@
     </div>
 
     <div class="tooltip"></div>
+    <script src="https://unpkg.com/topojson@3"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="app.js"></script>
 

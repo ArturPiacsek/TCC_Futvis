@@ -9,6 +9,7 @@ function updateAllVisualizations() {
     fetchTabelaCampeonato();
     loadTemporalAnalysisCharts();
     updateKpis();
+    loadBubbleMap()
 }
 
 /**
@@ -448,6 +449,106 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
     compEl.innerHTML = `<span class="${className}">${arrow} ${percentageChange.toFixed(1)}</span> vs ano anterior`;
 }
 
+    function createBubbleMap(data, worldAtlas) {
+        const selector = "#bubble-map-chart";
+        const container = d3.select(selector);
+        container.html("");
+
+        const width = 1000;
+        const height = 800;
+
+        const svg = container.append("svg")
+            .attr("viewBox", `0 0 ${width} ${height}`);
+            
+        const tooltip = d3.select('.tooltip');
+
+        // 1. Converter os dados do mapa (TopoJSON) para GeoJSON
+        const countries = topojson.feature(worldAtlas, worldAtlas.objects.countries);
+
+        // 2. Criar a projeção do mapa (como a esfera 3D é achatada em 2D)
+         const projection = d3.geoMercator()
+            .scale(300) // Aumenta o zoom. Ajuste este valor se necessário.
+            .center([-25, 20]) // Centraliza no Atlântico [Longitude, Latitude]
+            .translate([width / 2, height / 2]); // Garante que o ponto central fique no meio do SVG
+
+        // 3. Criar o gerador de caminhos (desenha as fronteiras)
+        const pathGenerator = d3.geoPath().projection(projection);
+
+        // 4. Desenhar os países do mapa
+        svg.selectAll(".country")
+            .data(countries.features)
+            .enter()
+            .append("path")
+            .attr("class", "country")
+            .attr("d", pathGenerator)
+            .style("fill", "#ccc")
+            .style("stroke", "#fff");
+
+        // 5. Preparar os dados das bolhas
+        const playerCounts = new Map(data.map(d => [d.nacionalidade, d.total_jogadores]));
+        const maxPlayers = d3.max(data, d => d.total_jogadores);
+
+        // 6. Criar a escala para o raio das bolhas (sqrt para área ser proporcional)
+        const radiusScale = d3.scaleSqrt()
+            .domain([0, maxPlayers])
+            .range([5, 40]); // Raio máximo de 40 pixels
+
+        // 7. Criar as bolhas
+        svg.selectAll(".bubble")
+            // Filtra apenas os países do mapa que existem nos seus dados de jogadores
+            .data(countries.features.filter(d => playerCounts.has(d.properties.name)))
+            .enter()
+            .append("circle")
+            .attr("class", "bubble")
+            // Posiciona a bolha no centroide (centro geográfico) do país
+            .attr("transform", d => `translate(${pathGenerator.centroid(d)})`)
+            .attr("r", d => radiusScale(playerCounts.get(d.properties.name)))
+            .style("fill", "#1f77b4")
+            .style("fill-opacity", 0.7)
+            .style("stroke", "#fff")
+            .style("stroke-width", 0.5)
+            // Adiciona a interatividade de mouseover
+            .on("mouseover", function(event, d) {
+                d3.select(this).style("fill-opacity", 1);
+                tooltip.style("opacity", 1)
+                    .html(`<strong>${d.properties.name}</strong><br>Jogadores: ${playerCounts.get(d.properties.name)}`)
+                    .style("left", (event.pageX + 15) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function() {
+                d3.select(this).style("fill-opacity", 0.7);
+                tooltip.style("opacity", 0);
+            });
+    }
+
+    // ----- Função para carregar os dados do mapa -----
+    function loadBubbleMap() {
+    // Lê ambos os filtros
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+
+    // Constrói a query string dinamicamente
+    const queryParams = [];
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+    const worldAtlasURL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+
+    Promise.all([
+        d3.json(`${API_BASE_URL}/jogadores-por-nacionalidade${queryString}`),
+        d3.json(worldAtlasURL)
+    ])
+    .then(([playerData, worldData]) => {
+        if (playerData && playerData.length > 0) {
+            createBubbleMap(playerData, worldData);
+        } else {
+            d3.select("#bubble-map-chart").html("<p>Nenhum dado de nacionalidade encontrado para esta combinação de filtros.</p>");
+        }
+    })
+    .catch(error => console.error('Erro ao carregar dados para o mapa:', error));
+}
+
 // ----- INICIALIZAÇÃO DA PÁGINA -----
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
@@ -461,6 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePlayerCharts(); // Mantém a lógica anterior
         fetchTabelaCampeonato();
         updateKpis();
+        loadBubbleMap()
         // Não chamamos loadTemporalAnalysisCharts aqui, pois ele não usa o filtro de temporada.
     });
 });
