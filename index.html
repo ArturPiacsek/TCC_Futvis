@@ -5,83 +5,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Futvis</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto+Condensed&display=swap" rel="stylesheet">
 </head>
 <body>
+    
+    <button id="toggle-sidebar">☰ Filtros</button>
 
-    <h1>Dashboard de Análise de Times ⚽</h1>
-        
-     <div class="filtro-geral-container">
-        <div>
-            <label for="time-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Time:</label>
-            <select id="time-filter">
-                <option value="">-- Todos os Times --</option>
-                </select>
+    <aside  class="sidebar-filtros" id="sidebar">
+        <h3>Filtros</h3>
+        <label for="time-filter" style="font-weight: bold; margin-right: 10px">Filtrar por Time:</label>
+        <select id="time-filter">
+            <option value="">-- Todos os Times --</option>
+        </select>
+
+        <label for="temporada-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Temporada:</label>
+        <select id="temporada-filter">
+            <option value="">-- Todos os Anos (Acumulado) --</option>
+        </select>
+    </aside>
+
+    <div class="main-content">
+
+        <nav class="navbar">  <!--Criação de menu de navegação na parte superior da tela-->
+            <ul>
+                <li><a href="#artilheiros-chart">Artilheiros</a></li>
+                <li><a href="#assistencias-chart">Assistências</a></li>
+                <li><a href="#participacoes-chart">Gols</a></li>
+                <li><a href="#tabela-campeonato-table">Tabela</a></li>
+                <li><a href="#bubble-map-chart">Nacionalidades</a></li>
+            </ul>
+        </nav>
+
+        <h1>Dashboard de Análise de Times ⚽</h1>
+
+        <div class="kpi-grid">
+        <div class="kpi-card" id="kpi-passes">
+            <h3>Precisão de Passes</h3>
+            <p class="kpi-value">--%</p>
+            <p class="kpi-comparison">-- vs ano anterior</p>
         </div>
-        <div>
-            <label for="temporada-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Temporada:</label>
-            <select id="temporada-filter">
-                <option value="">-- Todos os Anos (Acumulado) --</option>
-                </select>
+        <div class="kpi-card" id="kpi-defesas">
+            <h3>Defesas por Jogo</h3>
+            <p class="kpi-value">--</p>
+            <p class="kpi-comparison">-- vs ano anterior</p>
+        </div>
+        <div class="kpi-card" id="kpi-posse">
+            <h3>Posse de Bola</h3>
+            <p class="kpi-value">--%</p>
+            <p class="kpi-comparison">-- vs ano anterior</p>
         </div>
     </div>
 
-    <div class="kpi-grid">
-    <div class="kpi-card" id="kpi-passes">
-        <h3>Precisão de Passes</h3>
-        <p class="kpi-value">--%</p>
-        <p class="kpi-comparison">-- vs ano anterior</p>
-    </div>
-    <div class="kpi-card" id="kpi-defesas">
-        <h3>Defesas por Jogo</h3>
-        <p class="kpi-value">--</p>
-        <p class="kpi-comparison">-- vs ano anterior</p>
-    </div>
-    <div class="kpi-card" id="kpi-posse">
-        <h3>Posse de Bola</h3>
-        <p class="kpi-value">--%</p>
-        <p class="kpi-comparison">-- vs ano anterior</p>
-    </div>
-</div>
 
+        <div class="grid-container">
+            <section class="chart-container" aria-label="Top 10 Artilheiros">
+                <h2>Top 10 Artilheiros</h2>            
+                <div id="artilheiros-chart"></div>
+            </section>
+            <section class="chart-container" aria-label="Top 10 Assistências">
+                <h2>Top 10 Assistências</h2>           
+                <div id="assistencias-chart"></div>
+            </section>
+            <section class="chart-container" aria-label="Top 10 Participações em Gols">
+                <h2>Top 10 Participações em Gols</h2>            
+                <div id="participacoes-chart"></div>
+            </section>
+            <section class="chart-container" aria-label="Eficiência (Minutos por Gol)">
+                <h2>Eficiência (Minutos por Gol)</h2>            
+                <div id="eficiencia-table"></div>
+            </section>
+            <section class="chart-container" aria-label="Disciplina (Cartões)">
+                <h2>Disciplina (Cartões)</h2>            
+                <div id="disciplina-table"></div>
+            </section>
+            <section class="chart-container" style="grid-column: 1 / -1;" aria-label="Médias de Gols Entre Temporadas">
+                <h2>Média de Gols Entre Temporadas</h2>
+                <div id="multi-line-chart"></div>
+            </section>
+            <section class="chart-container" style="grid-column: 1 / -1;" aria-label="Composição dos Resultados (Vitórias, Derrotas e Empates)">
+                <h2>Composição dos Resultados (Vitórias, Derrotas e Empates)</h2>
+                <div id="stacked-area-chart"></div>
+            </section>        
+            <section class="chart-container" style="grid-column: 1 / -1;" aria-label="Distribuição de Jogadores por Nacionalidade">
+                <h2>Distribuição de Jogadores por Nacionalidade</h2>
+                <div id="bubble-map-chart"></div>
+            </section>        
+            <section class="chart-container" style="grid-column: 1 / -1;" aria-label="Tabela do Campeonato"> 
+                <h2>Tabela do Campeonato</h2>            
+                <div id="tabela-campeonato-table"></div>
+            </section>
+        </div>
+    </div>    
 
-    <div class="grid-container">
-        <div class="chart-container">
-            <h2>Top 10 Artilheiros</h2>            
-            <div id="artilheiros-chart"></div>
-        </div>
-        <div class="chart-container">
-            <h2>Top 10 Assistências</h2>           
-            <div id="assistencias-chart"></div>
-        </div>
-        <div class="chart-container">
-            <h2>Top 10 Participações em Gols</h2>            
-            <div id="participacoes-chart"></div>
-        </div>
-        <div class="chart-container">
-            <h2>Eficiência (Minutos por Gol)</h2>            
-            <div id="eficiencia-table"></div>
-        </div>
-        <div class="chart-container">
-            <h2>Disciplina (Cartões)</h2>            
-            <div id="disciplina-table"></div>
-        </div>
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Média de Gols Entre Temporadas</h2>
-            <div id="multi-line-chart"></div>
-        </div>
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Composição dos Resultados (Vitórias, Derrotas e Empates)</h2>
-            <div id="stacked-area-chart"></div>
-        </div>        
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Distribuição de Jogadores por Nacionalidade</h2>
-            <div id="bubble-map-chart"></div>
-        </div>        
-        <div class="chart-container" style="grid-column: 1 / -1;"> 
-            <h2>Tabela do Campeonato</h2>            
-            <div id="tabela-campeonato-table"></div>
-        </div>
-    </div>
+    <footer class="footer"> <!--Criação de rodapé no site-->
+        <p>Desenvolvido com apoio do curso de Sistemas de Informação da Universidade Federal Fluminense.</p>
+    </footer>
+
 
     <div class="tooltip"></div>
     <script src="https://unpkg.com/topojson@3"></script>

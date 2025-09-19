@@ -549,9 +549,29 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
     .catch(error => console.error('Erro ao carregar dados para o mapa:', error));
 }
 
+
+// Função que fixa o navbar na parte superior da tela
+function initStickyNavbar() {
+    const navbar = document.querySelector('.navbar');
+    const trigger = document.querySelector('h1');
+
+    if (!navbar || !trigger) return;
+
+    window.addEventListener('scroll', function () {
+        const triggerOffset = trigger.offsetTop + trigger.offsetHeight;
+
+        if (window.scrollY > triggerOffset) {
+            navbar.classList.add('sticky');
+        } else {
+            navbar.classList.remove('sticky');
+        }
+    });
+}
+
 // ----- INICIALIZAÇÃO DA PÁGINA -----
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
+    initStickyNavbar(); // Carrega o navbar
     updateAllVisualizations(); // Esta função agora carrega TUDO
 
     // O evento de 'change' para o filtro de time já chama a função correta
@@ -564,5 +584,19 @@ document.addEventListener('DOMContentLoaded', () => {
         updateKpis();
         loadBubbleMap()
         // Não chamamos loadTemporalAnalysisCharts aqui, pois ele não usa o filtro de temporada.
+    });
+
+    // Menu lateral colapsável dos filtros
+    const toggleBtn = document.getElementById('toggle-sidebar');
+    const sidebar = document.getElementById('sidebar');
+
+    toggleBtn.addEventListener('click', () => {
+        const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+        if (isDesktop) {
+            sidebar.classList.toggle('collapsed'); // recolhe ou mostra fixo no desktop
+        } else {
+            sidebar.classList.toggle('active'); // mostra ou esconde sidebar sobreposta aos gráficos em telas menores
+        }
     });
 });
