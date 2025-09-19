@@ -491,8 +491,55 @@ app.get('/api/jogadores-por-nacionalidade', async (req, res) => {
     }
 });
 
+// Rota 10: Dados agregados por time para o Scatter Plot
+app.get('/api/estilos-de-jogo', async (req, res) => {
+    try {
+        const { id_tempo } = req.query;
 
-// Rota 10: Lista de times
+        let sql = `
+            SELECT
+                T.nome,
+                T.logo_url_time,
+                SUM(FCT.gols_marcados) AS total_gols,
+                SUM(FCT.chutes_no_gol_total) AS total_chutes_no_gol,
+                AVG(FCT.media_posse_bola) AS media_posse
+            FROM
+                fato_estatisticas_clube_temporal AS FCT
+            JOIN
+                dim_time AS T ON FCT.id_time = T.id_time
+        `;
+        
+        const params = [];
+        const whereClauses = [];
+
+        // Lógica de filtro para a temporada
+        if (id_tempo) {
+            whereClauses.push(`FCT.id_tempo = ?`);
+            params.push(id_tempo);
+        } else {
+            whereClauses.push(`FCT.id_tempo IN (?, ?, ?)`);
+            params.push(...[1, 276, 549]);
+        }
+
+        // Adicionamos a cláusula WHERE
+        sql += ` WHERE ${whereClauses.join(' AND ')}`;
+
+        // Agrupamos por time para ter um ponto de dado por clube
+        sql += `
+            GROUP BY
+                T.id_time, T.nome, T.logo_url_time
+            HAVING 
+                SUM(FCT.total_jogos) > 0;
+        `;
+
+        const data = await executeQuery(sql, params);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 11: Lista de times
 app.get('/api/times', async (req, res) => {
     try {
         const sql = `
@@ -508,7 +555,7 @@ app.get('/api/times', async (req, res) => {
     }
 });
 
-// Rota 11: Listar AS TEMPORADAS VÁLIDAS para o filtro
+// Rota 12: Listar AS TEMPORADAS VÁLIDAS para o filtro
 app.get('/api/temporadas', async (req, res) => {
     try {
         // A query agora busca APENAS pelos IDs válidos que você informou.

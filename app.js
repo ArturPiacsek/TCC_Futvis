@@ -11,6 +11,7 @@ function updateAllVisualizations() {
     updateKpis();
     loadBubbleMap();
     loadHistogram();
+    loadScatterPlot();
 }
 
 /**
@@ -99,9 +100,21 @@ function loadTemporalAnalysisCharts() {
         .catch(error => console.error('Erro ao carregar dados para análise temporal:', error));
 }
 
-// ----- FUNÇÕES GENÉRICAS (Cole suas funções aqui) -----
-// ... As funções fetchAndDrawChart, fetchAndDrawTable, createBarChart, createTable ...
-// (As mesmas do exemplo anterior)
+// ----- Função para carregar os dados do Scatter Plot -----
+function loadScatterPlot() {
+    // Este gráfico depende apenas do filtro de temporada
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+    const tempoQueryParam = selectedTempoId ? `?id_tempo=${selectedTempoId}` : '';
+
+    fetch(`${API_BASE_URL}/estilos-de-jogo${tempoQueryParam}`)
+        .then(res => res.json())
+        .then(data => {
+            createScatterPlot(data);
+        })
+        .catch(error => console.error('Erro ao carregar dados do scatter plot:', error));
+}
+
+// ----- FUNÇÕES GENÉRICAS -----
 function fetchAndDrawChart(apiUrl, selector, yAxisLabel, xKey, yKey) {
     fetch(apiUrl)
         .then(response => response.json())
@@ -780,6 +793,82 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
     .catch(error => console.error('Erro ao carregar dados para o mapa:', error));
 }
 
+/**
+ * Cria o gráfico de dispersão interativo.
+ * @param {Array} data - Dados dos times com posse, gols e chutes.
+ */
+function createScatterPlot(data) {
+    const selector = "#scatter-plot-chart";
+    const container = d3.select(selector);
+    container.html("");
+
+    if (data.length === 0) {
+        container.html("<p>Nenhum dado encontrado para esta combinação de filtros.</p>");
+        return;
+    }
+
+    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+    const width = 1000 - margin.left - margin.right;
+    const height = 650 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+    const tooltip = d3.select('.tooltip');
+
+    // 1. Escalas
+    const xScale = d3.scaleLinear()
+        .domain(d3.extent(data, d => +d.media_posse)).nice() // .nice() arredonda o domínio
+        .range([0, width]);
+
+    const yScale = d3.scaleLinear()
+        .domain(d3.extent(data, d => +d.total_gols)).nice()
+        .range([height, 0]);
+
+    // Usamos scaleSqrt para que a ÁREA da bolha seja proporcional, não o raio
+    const sizeScale = d3.scaleSqrt()
+        .domain([0, d3.max(data, d => +d.total_chutes_no_gol)])
+        .range([8, 40]); // Tamanho da logo de 8px a 40px
+
+    // 2. Eixos
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+    svg.append("g").call(d3.axisLeft(yScale));
+
+    // Labels dos eixos
+    svg.append("text").attr("x", width / 2).attr("y", height + 45).text("Média de Posse de Bola (%)").style("text-anchor", "middle").style("font-weight", "bold");
+    svg.append("text").attr("transform", "rotate(-90)").attr("y", -45).attr("x", -height / 2).text("Total de Gols Marcados").style("text-anchor", "middle").style("font-weight", "bold");
+
+    // 3. Desenhar os pontos (usando as logos dos times)
+    svg.append("g")
+        .selectAll("image")
+        .data(data)
+        .enter()
+        .append("image")
+        .attr("x", d => xScale(+d.media_posse) - (sizeScale(+d.total_chutes_no_gol) / 2))
+        .attr("y", d => yScale(+d.total_gols) - (sizeScale(+d.total_chutes_no_gol) / 2))
+        .attr("width", d => sizeScale(+d.total_chutes_no_gol))
+        .attr("height", d => sizeScale(+d.total_chutes_no_gol))
+        .attr("href", d => d.logo_url_time)
+        .attr("referrerpolicy", "no-referrer")
+        .style("cursor", "pointer")
+        .on("mouseover", function(event, d) {
+            tooltip.style("opacity", 1);
+            tooltip.html(`
+                <strong>${d.nome}</strong><br/>
+                Posse de Bola: ${parseFloat(d.media_posse).toFixed(1)}%<br/>
+                Gols Marcados: ${d.total_gols}<br/>
+                Chutes no Gol: ${d.total_chutes_no_gol}
+            `)
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+            tooltip.style("opacity", 0);
+        });
+}
+
 // ----- INICIALIZAÇÃO DA PÁGINA -----
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
@@ -789,12 +878,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('#time-filter').addEventListener('change', updateAllVisualizations);
     
     // O evento do filtro de temporada deve atualizar tudo, exceto os gráficos de jogadores
-    document.querySelector('#temporada-filter').addEventListener('change', () => {
-        updatePlayerCharts(); // Mantém a lógica anterior
-        fetchTabelaCampeonato();
-        updateKpis();
-        loadBubbleMap();
-        loadHistogram();
-        // Não chamamos loadTemporalAnalysisCharts aqui, pois ele não usa o filtro de temporada.
-    });
+    document.querySelector('#temporada-filter').addEventListener('change', updateAllVisualizations);    
 });
