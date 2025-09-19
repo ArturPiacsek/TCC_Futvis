@@ -9,7 +9,8 @@ function updateAllVisualizations() {
     fetchTabelaCampeonato();
     loadTemporalAnalysisCharts();
     updateKpis();
-    loadBubbleMap()
+    loadBubbleMap();
+    loadHistogram();
 }
 
 /**
@@ -28,9 +29,15 @@ function updatePlayerCharts() {
 
     fetchAndDrawChart(`${API_BASE_URL}/artilheiros${queryString}`, "#artilheiros-chart", "Gols", "nome_jogador", "total");
     fetchAndDrawChart(`${API_BASE_URL}/assistencias${queryString}`, "#assistencias-chart", "Assistências", "nome_jogador", "total");
-    fetchAndDrawChart(`${API_BASE_URL}/participacoes-gol${queryString}`, "#participacoes-chart", "Participações", "nome_jogador", "total");
-    fetchAndDrawTable(`${API_BASE_URL}/eficiencia-minutos-gol${queryString}`, "#eficiencia-table", ["Jogador", "Gols", "Minutos", "Minutos / Gol"], ["nome_jogador", "total_gols", "total_minutos", "minutos_por_gol"]);
-    fetchAndDrawTable(`${API_BASE_URL}/disciplina${queryString}`, "#disciplina-table", ["Jogador", "Amarelos 🟨", "Vermelhos 🟥"], ["nome_jogador", "amarelos", "vermelhos"]);
+    fetchAndDrawChart(`${API_BASE_URL}/participacoes-gol${queryString}`, "#participacoes-chart", "Participações", "nome_jogador", "total");    
+    fetch(`${API_BASE_URL}/disciplina${queryString}`)
+    .then(res => res.json())
+    .then(data => {
+        if (data && !data.error) {
+            createStackedBarChart(data);
+        }
+    })
+    .catch(error => console.error('Erro ao carregar dados de disciplina:', error));
 }
 
 /**
@@ -238,6 +245,143 @@ function createTable(data, selector, headers, keys) {
             }
             return cellData.value;
         });
+}
+
+/**
+ * Exibe a lista de jogadores de um "bin" (faixa) selecionado do histograma.
+ * VERSÃO ATUALIZADA: Mostra logo, gols e minutos.
+ * @param {Array} binData - O array de objetos de jogadores do bin.
+ * @param {object} binRange - O objeto com as informações da faixa (ex: {x0: 90, x1: 100}).
+ */
+function displayHistogramPlayerList(binData, binRange) {
+    const container = d3.select("#histogram-details");
+    container.html("");
+
+    if (binData.length === 0) return;
+
+    container.append("h4")
+        .text(`Jogadores na Faixa (${binRange.x0} a ${binRange.x1} min/gol):`);
+    
+    const list = container.append("ul").attr("class", "player-list");
+
+    // Ordena os jogadores dentro da faixa pela eficiência
+    binData.sort((a, b) => a.minutos_por_gol - b.minutos_por_gol);
+
+    binData.forEach(player => {
+        // Para cada jogador, cria o HTML do item da lista
+        list.append("li")
+            .attr("class", "player-list-item")
+            .html(`
+                <img src="${player.logo_url_time}" class="player-list-logo" referrerpolicy="no-referrer">
+                <div class="player-list-info">
+                    <strong>${player.nome_jogador} (${player.minutos_por_gol} min/gol)</strong>
+                    <span>Gols: ${player.total_gols} | Minutos: ${player.total_minutos}</span>
+                </div>
+            `);
+    });
+}
+
+/**
+ * Cria o gráfico de histograma interativo.
+ * @param {Array} data - Os dados de eficiência de todos os jogadores.
+ */
+function createHistogram(data) {
+    const selector = "#histogram-chart";
+    const container = d3.select(selector);
+    container.html("");
+    d3.select("#histogram-details").html(""); // Limpa também a lista de detalhes
+
+    if (data.length === 0) {
+        container.html("<p>Nenhum dado de eficiência encontrado para esta combinação de filtros.</p>");
+        return;
+    }
+
+    const margin = { top: 20, right: 30, bottom: 50, left: 50 };
+    const width = 1000 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    const tooltip = d3.select('.tooltip');
+
+    // 1. Escala X (para os valores de "minutos por gol")
+    const xScale = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.minutos_por_gol)])
+        .range([0, width]);
+
+    // 2. Função de "binning" do D3
+    const histogram = d3.histogram()
+        .value(d => d.minutos_por_gol)
+        .domain(xScale.domain())
+        .thresholds(xScale.ticks(20)); // Cria cerca de 20 faixas (barras)
+
+    const bins = histogram(data);
+
+    // 3. Escala Y (para a contagem de jogadores em cada faixa)
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(bins, d => d.length) * 1.1])
+        .range([height, 0]);
+
+    // 4. Desenhar os eixos
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+    svg.append("g").call(d3.axisLeft(yScale));
+    svg.append("text").attr("x", width / 2).attr("y", height + 40).text("Minutos por Gol").style("text-anchor", "middle");
+    svg.append("text").attr("transform", "rotate(-90)").attr("y", -35).attr("x", -height / 2).text("Nº de Jogadores").style("text-anchor", "middle");
+
+    // 5. Desenhar as barras do histograma
+    const bars = svg.selectAll("rect")
+        .data(bins)
+        .enter()
+        .append("rect")
+        .attr("x", 1)
+        .attr("transform", d => `translate(${xScale(d.x0)}, ${yScale(d.length)})`)
+        .attr("width", d => xScale(d.x1) - xScale(d.x0) - 1)
+        .attr("height", d => height - yScale(d.length))
+        .style("fill", "#1f77b4")
+        .style("cursor", "pointer")
+        // 6. Adicionar interatividade
+        .on("mouseover", function(event, d) {
+            d3.select(this).style("fill", "#ff7f0e");
+            tooltip.style("opacity", 1)
+                   .html(`<strong>Faixa:</strong> ${d.x0}-${d.x1} min/gol<br><strong>Jogadores:</strong> ${d.length}`)
+                   .style("left", (event.pageX + 15) + "px")
+                   .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+            // Apenas retorna à cor normal se não estiver selecionado
+            if (!d3.select(this).classed("selected")) {
+                d3.select(this).style("fill", "#1f77b4");
+            }
+            tooltip.style("opacity", 0);
+        })
+        .on("click", function(event, d) {
+            // Remove a seleção de todas as outras barras
+            bars.classed("selected", false).style("fill", "#1f77b4");
+            // Adiciona a classe e a cor de seleção à barra clicada
+            d3.select(this).classed("selected", true).style("fill", "#ff7f0e");
+            // Chama a função para exibir a lista de jogadores
+            displayHistogramPlayerList(d, {x0: d.x0, x1: d.x1});
+        });
+}
+
+// ----- Função para carregar os dados do histograma -----
+function loadHistogram() {
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+    const queryParams = [];
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+    fetch(`${API_BASE_URL}/eficiencia-histograma${queryString}`)
+        .then(res => res.json())
+        .then(data => {
+            createHistogram(data);
+        })
+        .catch(error => console.error('Erro ao carregar dados do histograma:', error));
 }
 
 // GRÁFICO DE LINHAS MÚLTIPLAS
@@ -521,6 +665,93 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
             });
     }
 
+    function createStackedBarChart(data) {
+    const selector = "#disciplina-table"; // Usaremos o mesmo container
+    const container = d3.select(selector);
+    container.html(""); // Limpa o container
+
+    if (data.length === 0) {
+        container.html("<p>Nenhum dado encontrado para esta combinação de filtros.</p>");
+        return;
+    }
+
+    const margin = { top: 20, right: 30, bottom: 100, left: 50 };
+    const width = 450 - margin.left - margin.right;
+    const height = 300 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const tooltip = d3.select('.tooltip');
+
+    // 1. Definir as chaves para empilhar e as cores
+    const keys = ["amarelos", "vermelhos"];
+    const colors = {
+        amarelos: "#FFC300", // Amarelo
+        vermelhos: "#C70039"  // Vermelho
+    };
+    const colorScale = d3.scaleOrdinal().domain(keys).range(Object.values(colors));
+
+    // 2. Preparar os dados para o empilhamento
+    const stack = d3.stack().keys(keys);
+    const numericData = data.map(d => ({...d, amarelos: +d.amarelos, vermelhos: +d.vermelhos}));
+    const stackedData = stack(numericData);
+
+    // 3. Definir as escalas
+    const xScale = d3.scaleBand()
+        .domain(data.map(d => d.nome_jogador))
+        .range([0, width])
+        .padding(0.2);
+
+    // O domínio do eixo Y vai de 0 até o total de cartões (amarelos + vermelhos)
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(data, d => +d.amarelos + +d.vermelhos) * 1.1])
+        .range([height, 0]);
+
+    // 4. Desenhar os eixos
+    svg.append("g")
+        .attr("transform", `translate(0, ${height})`)
+        .call(d3.axisBottom(xScale))
+        .selectAll("text")
+        .attr("transform", "translate(-10,0)rotate(-45)")
+        .style("text-anchor", "end");
+    svg.append("g").call(d3.axisLeft(yScale).ticks(5));
+
+    // 5. Desenhar as barras empilhadas
+    svg.append("g")
+        .selectAll("g")
+        .data(stackedData) // Itera sobre as séries (uma para amarelos, uma para vermelhos)
+        .enter()
+        .append("g")
+        .attr("fill", d => colorScale(d.key)) // Define a cor para a série
+        .selectAll("rect")
+        .data(d => d) // Itera sobre os jogadores dentro da série
+        .enter()
+        .append("rect")
+        .attr("x", d => xScale(d.data.nome_jogador))
+        .attr("y", d => yScale(d[1])) // d[1] é o topo do segmento
+        .attr("height", d => yScale(d[0]) - yScale(d[1])) // d[0] é a base
+        .attr("width", xScale.bandwidth())
+        // 6. Adicionar interatividade de mouseover
+        .on("mouseover", function(event, d) {
+            tooltip.style("opacity", 1);
+            // d.data contém o objeto original do jogador
+            const jogadorData = d.data;
+            tooltip.html(`
+                <strong>${jogadorData.nome_jogador}</strong><br/>
+                <span style="color:${colors.amarelos};">●</span> Amarelos: ${jogadorData.amarelos}<br/>
+                <span style="color:${colors.vermelhos};">●</span> Vermelhos: ${jogadorData.vermelhos}
+            `)
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+            tooltip.style("opacity", 0);
+        });
+}
+
     // ----- Função para carregar os dados do mapa -----
     function loadBubbleMap() {
     // Lê ambos os filtros
@@ -562,7 +793,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePlayerCharts(); // Mantém a lógica anterior
         fetchTabelaCampeonato();
         updateKpis();
-        loadBubbleMap()
+        loadBubbleMap();
+        loadHistogram();
         // Não chamamos loadTemporalAnalysisCharts aqui, pois ele não usa o filtro de temporada.
     });
 });

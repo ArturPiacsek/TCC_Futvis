@@ -122,55 +122,46 @@ app.get('/api/assistencias', async (req, res) => {
 });
 
 // Rota 3: Eficiência (Minutos para marcar um gol)
-app.get('/api/eficiencia-minutos-gol', async (req, res) => {
+app.get('/api/eficiencia-histograma', async (req, res) => {
     try {
         const { id_time, id_tempo } = req.query;
 
-        // Início da query
         let sql = `
             SELECT 
                 j.nome_jogador,
                 SUM(f.gols) as total_gols,
                 SUM(f.minutos_jogados) as total_minutos,
-                ROUND(SUM(f.minutos_jogados) / SUM(f.gols)) as minutos_por_gol
+                ROUND(SUM(f.minutos_jogados) / SUM(f.gols)) as minutos_por_gol,
+                t.logo_url_time
             FROM fato_jogador_geral f
             JOIN dim_jogador j ON f.id_jogador = j.id_jogador
+            JOIN dim_time t ON f.id_clube = t.id_time
         `;
 
         const params = [];
-        const whereClauses = [];
+        const whereClauses = [`f.gols > 0`];
 
-        // Adiciona a condição PERMANENTE desta rota
-        whereClauses.push(`f.gols > 0`);
-
-        // Adiciona o filtro de time, se existir
         if (id_time) {
             whereClauses.push(`f.id_clube = ?`);
             params.push(id_time);
         }
 
-        // Adiciona a lógica de filtro para a temporada
         if (id_tempo) {
-            // Se um ano específico foi selecionado
             whereClauses.push(`f.id_tempo = ?`);
             params.push(id_tempo);
         } else {
-            // Se for "Acumulado", usa os 3 anos válidos
             whereClauses.push(`f.id_tempo IN (?, ?, ?)`);
             params.push(...[1, 276, 549]);
         }
 
-        // Junta todas as condições com AND e adiciona ao SQL
         sql += ` WHERE ${whereClauses.join(' AND ')}`;
 
-        // Adiciona o resto da query
         sql += `
-            GROUP BY j.nome_jogador
-            HAVING SUM(f.minutos_jogados) > 500
-            ORDER BY minutos_por_gol ASC
-            LIMIT 10;
+            GROUP BY j.nome_jogador, t.logo_url_time
+            HAVING SUM(f.minutos_jogados) > 90 
+            ORDER BY minutos_por_gol ASC;
         `;
-        
+
         const data = await executeQuery(sql, params);
         res.json(data);
     } catch (error) {
@@ -178,7 +169,7 @@ app.get('/api/eficiencia-minutos-gol', async (req, res) => {
     }
 });
 
-// Rota 4: Disciplina (Mais cartões)
+// Rota 4: Disciplina (cartões)
 app.get('/api/disciplina', async (req, res) => {
     try {
         const { id_time, id_tempo } = req.query; // Pega ambos os filtros da URL
@@ -313,7 +304,6 @@ app.get('/api/tabela-campeonato', async (req, res) => {
 });
 
 // Rota 7: analise temporal
-// server.js
 
 app.get('/api/analise-temporal', async (req, res) => {
     try {
