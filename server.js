@@ -32,9 +32,14 @@ app.get('/api/artilheiros', async (req, res) => {
         const { id_time, id_tempo } = req.query; // Pega ambos os filtros da URL
 
         let sql = `
-            SELECT j.nome_jogador, SUM(f.gols) as total
+            SELECT
+                 j.id_jogador,
+                 j.nome_jogador,
+                 t.logo_url_time,   
+                 SUM(f.gols) as total
             FROM fato_jogador_geral f
             JOIN dim_jogador j ON f.id_jogador = j.id_jogador
+            JOIN dim_time t ON f.id_clube = t.id_time
         `;
         
         const params = [];
@@ -63,9 +68,9 @@ app.get('/api/artilheiros', async (req, res) => {
 
         // Adiciona o final da query
         sql += `
-            GROUP BY j.nome_jogador
+            GROUP BY j.id_jogador, j.nome_jogador, t.logo_url_time
             ORDER BY total DESC
-            LIMIT 10;
+            LIMIT 20;
         `;
         
         const data = await executeQuery(sql, params);
@@ -81,9 +86,14 @@ app.get('/api/assistencias', async (req, res) => {
         const { id_time, id_tempo } = req.query; // Pega ambos os filtros da URL
 
         let sql = `
-            SELECT j.nome_jogador, SUM(f.assistencias) as total
+            SELECT 
+                j.id_jogador,
+                j.nome_jogador,
+                t.logo_url_time,
+                SUM(f.assistencias) as total
             FROM fato_jogador_geral f
             JOIN dim_jogador j ON f.id_jogador = j.id_jogador
+            JOIN dim_time t ON f.id_clube = t.id_time
         `;
         const params = [];
         const whereClauses = []; // Array para guardar nossas condições
@@ -109,9 +119,9 @@ app.get('/api/assistencias', async (req, res) => {
             sql += ` WHERE ${whereClauses.join(' AND ')}`;
         }
         sql += `
-            GROUP BY j.nome_jogador
+            GROUP BY j.id_jogador, j.nome_jogador, t.logo_url_time
             ORDER BY total DESC
-            LIMIT 10;
+            LIMIT 20;
         `;
 
         const data = await executeQuery(sql, params);
@@ -176,11 +186,14 @@ app.get('/api/disciplina', async (req, res) => {
 
         let sql = `
             SELECT 
-                j.nome_jogador, 
+                j.id_jogador,
+                j.nome_jogador,
+                t.logo_url_time, 
                 SUM(f.cartoes_amarelos) as amarelos, 
                 SUM(f.cartoes_vermelhos) as vermelhos
             FROM fato_jogador_geral f
             JOIN dim_jogador j ON f.id_jogador = j.id_jogador
+            JOIN dim_time t ON f.id_clube = t.id_time
          `;
         const params = [];
         const whereClauses = []; // Array para guardar nossas condições
@@ -207,9 +220,9 @@ app.get('/api/disciplina', async (req, res) => {
         }
 
         sql += `
-            GROUP BY j.nome_jogador
+            GROUP BY j.id_jogador, j.nome_jogador, t.logo_url_time
             ORDER BY amarelos DESC, vermelhos DESC
-            LIMIT 10;
+            LIMIT 20;
         `;
         const data = await executeQuery(sql, params);
         res.json(data);
@@ -225,9 +238,14 @@ app.get('/api/participacoes-gol', async (req, res) => {
         
 
         let sql = `
-            SELECT j.nome_jogador, SUM(f.participacoes_em_gol) as total
+            SELECT 
+                j.id_jogador,
+                j.nome_jogador,
+                t.logo_url_time, 
+                SUM(f.participacoes_em_gol) as total
             FROM fato_jogador_geral f
             JOIN dim_jogador j ON f.id_jogador = j.id_jogador
+            JOIN dim_time t ON f.id_clube = t.id_time
          `;
         const params = [];
         const whereClauses = []; // Array para guardar nossas condições
@@ -254,9 +272,9 @@ app.get('/api/participacoes-gol', async (req, res) => {
         }
 
         sql += `
-            GROUP BY j.nome_jogador
+            GROUP BY j.id_jogador, j.nome_jogador, t.logo_url_time
             ORDER BY total DESC
-            LIMIT 10;
+            LIMIT 20;
         `;
         const data = await executeQuery(sql, params);
         res.json(data);
@@ -551,7 +569,8 @@ app.get('/api/analise-goleiros', async (req, res) => {
                     f.id_clube,
                     f.id_tempo,
                     SUM(f.gols_sofridos) as gols_sofridos,
-                    SUM(f.minutos_jogados) as minutos_jogados
+                    SUM(f.minutos_jogados) as minutos_jogados,
+                    SUM(f.nota) as nota
                 FROM fato_jogador_geral f
                 WHERE f.gols_sofridos > 0
                 GROUP BY f.id_jogador, f.id_clube, f.id_tempo
@@ -573,8 +592,11 @@ app.get('/api/analise-goleiros', async (req, res) => {
                 GROUP BY id_clube, id_tempo
             )            
             SELECT
+                j.id_jogador,
                 j.nome_jogador,
+                j.logo_url_jogador,
                 t.logo_url_time,
+                gs.nota,
                 gs.gols_sofridos,
                 gs.minutos_jogados,                
                 ROUND(td.total_defesas_time * (gs.minutos_jogados / tgk.total_minutos_goleiros_time)) AS defesas,                
@@ -617,7 +639,55 @@ app.get('/api/analise-goleiros', async (req, res) => {
     }
 });
 
-// Rota 12: Lista de times
+// Rota 12: Detalhes de um jogador para o Radar Chart
+app.get('/api/jogador-detalhes/:id_jogador', async (req, res) => {
+    try {
+        const { id_jogador } = req.params;
+        const { id_tempo } = req.query;
+
+        // Subquery para o filtro de tempo
+        let tempoFilterSubquery = '';
+        const params = [];
+        if (id_tempo) {
+            tempoFilterSubquery = `AND f.id_tempo = ?`;
+            params.push(id_tempo);
+        } else {
+            tempoFilterSubquery = `AND f.id_tempo IN (?, ?, ?)`;
+            params.push(...[1, 276, 549]);
+        }
+
+        const sql = `
+            SELECT
+                j.nome_jogador,
+                j.logo_url_jogador,
+                t.logo_url_time,
+                SUM(f.nota) AS nota,
+                SUM(f.gols) AS gols,
+                SUM(f.assistencias) AS assistencias,
+                SUM(f.participacoes_em_gol) AS participacoes_em_gol,
+                SUM(f.minutos_jogados) AS minutos_jogados,                
+                (SELECT MAX(s.nota) FROM (SELECT SUM(nota) AS nota FROM fato_jogador_geral f WHERE 1=1 ${tempoFilterSubquery} GROUP BY id_jogador) s) AS max_nota,
+                (SELECT MAX(s.gols) FROM (SELECT SUM(gols) AS gols FROM fato_jogador_geral f WHERE 1=1 ${tempoFilterSubquery} GROUP BY id_jogador) s) AS max_gols,
+                (SELECT MAX(s.assistencias) FROM (SELECT SUM(assistencias) AS assistencias FROM fato_jogador_geral f WHERE 1=1 ${tempoFilterSubquery} GROUP BY id_jogador) s) AS max_assistencias,
+                (SELECT MAX(s.participacoes) FROM (SELECT SUM(participacoes_em_gol) AS participacoes FROM fato_jogador_geral f WHERE 1=1 ${tempoFilterSubquery} GROUP BY id_jogador) s) AS max_participacoes,
+                (SELECT MAX(s.minutos) FROM (SELECT SUM(minutos_jogados) AS minutos FROM fato_jogador_geral f WHERE 1=1 ${tempoFilterSubquery} GROUP BY id_jogador) s) AS max_minutos
+            FROM fato_jogador_geral f
+            JOIN dim_jogador j ON f.id_jogador = j.id_jogador
+            JOIN dim_time t ON f.id_clube = t.id_time
+            WHERE f.id_jogador = ? ${tempoFilterSubquery}
+            GROUP BY j.nome_jogador, j.logo_url_jogador, t.logo_url_time;
+        `;
+
+        const finalParams = [...params, ...params, ...params, ...params, ...params, id_jogador, ...params];
+        
+        const data = await executeQuery(sql, finalParams);
+        res.json(data[0]); // Retorna apenas o primeiro (e único) resultado
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 13: Lista de times
 app.get('/api/times', async (req, res) => {
     try {
         const sql = `
@@ -633,7 +703,7 @@ app.get('/api/times', async (req, res) => {
     }
 });
 
-// Rota 13: Listar AS TEMPORADAS VÁLIDAS para o filtro
+// Rota 14: Listar AS TEMPORADAS VÁLIDAS para o filtro
 app.get('/api/temporadas', async (req, res) => {
     try {
         // A query agora busca APENAS pelos IDs válidos que você informou.

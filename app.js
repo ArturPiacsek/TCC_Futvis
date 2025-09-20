@@ -1,10 +1,8 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
-/**
- * Função que é chamada QUANDO QUALQUER FILTRO MUDA.
- * Ela atualiza tanto os gráficos de jogadores quanto a tabela do campeonato.
- */
+//Função que é chamada QUANDO QUALQUER FILTRO MUDA. 
 function updateAllVisualizations() {
+    hidePlayerDetails();
     updatePlayerCharts();
     fetchTabelaCampeonato();
     loadTemporalAnalysisCharts();
@@ -12,12 +10,11 @@ function updateAllVisualizations() {
     loadBubbleMap();
     loadHistogram();
     loadScatterPlot();
-    loadGoalkeeperAnalysis();
+    loadGoalkeeperAnalysis();    
 }
 
-/**
- * Atualiza todos os gráficos de jogadores com base nos filtros selecionados.
- */
+
+// Atualiza todos os gráficos de jogadores com base nos filtros selecionados. 
 function updatePlayerCharts() {
     const selectedTeamId = document.querySelector('#time-filter').value;
     const selectedTempoId = document.querySelector('#temporada-filter').value;
@@ -29,22 +26,22 @@ function updatePlayerCharts() {
 
     console.log(`Atualizando gráficos de jogadores com: ${queryString}`);
 
-    fetchAndDrawChart(`${API_BASE_URL}/artilheiros${queryString}`, "#artilheiros-chart", "Gols", "nome_jogador", "total");
-    fetchAndDrawChart(`${API_BASE_URL}/assistencias${queryString}`, "#assistencias-chart", "Assistências", "nome_jogador", "total");
-    fetchAndDrawChart(`${API_BASE_URL}/participacoes-gol${queryString}`, "#participacoes-chart", "Participações", "nome_jogador", "total");    
+    fetchAndDrawChart(`${API_BASE_URL}/artilheiros${queryString}`, "#artilheiros-tab", "Gols", "nome_jogador", "total");
+    fetchAndDrawChart(`${API_BASE_URL}/assistencias${queryString}`, "#assistencias-tab", "Assistências", "nome_jogador", "total");
+    fetchAndDrawChart(`${API_BASE_URL}/participacoes-gol${queryString}`, "#participacoes-tab", "Participações", "nome_jogador", "total");    
     fetch(`${API_BASE_URL}/disciplina${queryString}`)
-    .then(res => res.json())
-    .then(data => {
-        if (data && !data.error) {
-            createStackedBarChart(data);
+        .then(res => res.json())
+        .then(data => {
+            if (data && !data.error) {                
+                createStackedBarChart(data, "#disciplina-tab", "Total de Cartões");
         }
     })
     .catch(error => console.error('Erro ao carregar dados de disciplina:', error));
 }
 
-/**
- * Busca e desenha a tabela do campeonato com base no filtro de temporada.
- */
+
+// Busca e desenha a tabela do campeonato com base no filtro de temporada.
+ 
 function fetchTabelaCampeonato() {
     // Agora lê do filtro global. Se nenhum for selecionado, usa o ID padrão (549 - 2023).
     const selectedIdTempo = document.querySelector('#temporada-filter').value || '549';
@@ -57,9 +54,9 @@ function fetchTabelaCampeonato() {
     fetchAndDrawTable(apiUrl, "#tabela-campeonato-table", headers, keys);
 }
 
-/**
- * Popula os menus de filtro buscando os dados da API.
- */
+
+//Popula os menus de filtro buscando os dados da API.
+
 function populateFilters() {
     // Popula filtro de times
     fetch(`${API_BASE_URL}/times`)
@@ -147,9 +144,9 @@ function fetchAndDrawTable(apiUrl, selector, headers, keys) {
         });
 }
 
-/**
- * Função principal para carregar os dados da análise de goleiros.
- */
+
+//Função principal para carregar os dados da análise de goleiros.
+ 
 function loadGoalkeeperAnalysis() {
     // Lê ambos os filtros
     const selectedTeamId = document.querySelector('#time-filter').value;
@@ -165,7 +162,7 @@ function loadGoalkeeperAnalysis() {
         .then(data => {
             if (data && data.length > 0) {
                 createGoalkeeperBarChart(data);
-                createGoalkeeperScatterPlot(data);
+                createGoalkeeperScatterPlot(data, "#goleiros-scatter-tab");
             } else {
                 d3.select("#goleiro-barras").html("<p>Nenhum dado de goleiro encontrado para esta combinação de filtros.</p>");
                 d3.select("#goleiro-dispersao").html("<p>Nenhum dado de goleiro encontrado para esta combinação de filtros.</p>");
@@ -195,9 +192,7 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
         
     // Seleciona o nosso div de tooltip
     const tooltip = d3.select('.tooltip');
-
-    // 1. CORREÇÃO DO EIXO Y
-    // Usamos o operador '+' para garantir que o valor seja tratado como NÚMERO
+    
     // Multiplicamos por 1.1 para dar um espaço extra no topo do gráfico
     const yMax = d3.max(data, d => +d[yKey]);
     const yScale = d3.scaleLinear()
@@ -217,7 +212,25 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
         .attr("transform", "translate(-10,0)rotate(-45)")
         .style("text-anchor", "end");
 
+    /* Eixo X (sem os textos)
+    svg.append("g")
+        .attr("transform", `translate(0, ${height})`)
+        .call(d3.axisBottom(xScale))
+        .selectAll(".tick text")
+        .remove();  */
+
     svg.append("g").call(d3.axisLeft(yScale).ticks(5));
+
+     svg.append("text")
+        .attr("transform", "rotate(-90)") // Rotaciona o texto para ficar vertical
+        .attr("y", 0 - margin.left) // Posiciona à esquerda do eixo Y
+        .attr("x", 0 - (height / 2)) // Centraliza na altura do eixo
+        .attr("dy", "1em") // Dá um pequeno espaçamento
+        .style("text-anchor", "middle") // Garante que a rotação seja pelo centro
+        .style("font-size", "10px")
+        .style("font-weight", "bold")
+        .style("fill", "#555")
+        .text(yAxisLabel); // Usa o texto passado como parâmetro
 
     // Desenha as barras
     svg.selectAll(".bar")
@@ -229,6 +242,10 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
         .attr("y", d => yScale(+d[yKey]))
         .attr("width", xScale.bandwidth())
         .attr("height", d => height - yScale(+d[yKey]))
+        .style("cursor", "pointer") // Adiciona o cursor de clique
+        .on("click", (event, d) => {
+            showPlayerDetails(d); // 'd' contém id_jogador, nome, etc.
+        })
         
         // 2. MELHORIA: ADICIONANDO EVENTOS DE MOUSE (TOOLTIP)
         .on('mouseover', function(event, d) {
@@ -239,7 +256,15 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
             tooltip.style('opacity', 1);
 
             // Define o conteúdo e a posição do tooltip
-            tooltip.html(`${xKey.replace(/_/g, ' ')}: <strong>${d[xKey]}</strong><br>${yAxisLabel}: <strong>${d[yKey]}</strong>`)
+            tooltip.html(`
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <img src="${d.logo_url_time}" style="width: 25px; height: 25px;" referrerpolicy="no-referrer">
+                    <div>
+                        <strong>${d[xKey]}</strong><br>
+                        ${yAxisLabel}: <strong>${d[yKey]}</strong>
+                    </div>
+                </div>
+            `)
                 .style('left', (event.pageX + 15) + 'px')
                 .style('top', (event.pageY - 28) + 'px');
         })
@@ -248,17 +273,7 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
             d3.select(this).style('opacity', 1);
             // Esconde o tooltip
             tooltip.style('opacity', 0);
-        });
-
-    // 3. MELHORIA: ADICIONANDO RÓTULOS (VALOR EM CIMA DA BARRA)
-    svg.selectAll(".bar-label")
-        .data(data)
-        .enter()
-        .append("text")
-        .attr("class", "bar-label")
-        .attr("x", d => xScale(d[xKey]) + xScale.bandwidth() / 2) // Centraliza o texto no meio da barra
-        .attr("y", d => yScale(+d[yKey]) - 5) // Posiciona um pouco acima da barra
-        .text(d => d[yKey]);
+        });    
 }
 
 function createTable(data, selector, headers, keys) {
@@ -706,8 +721,7 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
             });
     }
 
-    function createStackedBarChart(data) {
-    const selector = "#disciplina-table"; // Usaremos o mesmo container
+    function createStackedBarChart(data, selector,  yAxisLabel) {    
     const container = d3.select(selector);
     container.html(""); // Limpa o container
 
@@ -758,7 +772,26 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
         .selectAll("text")
         .attr("transform", "translate(-10,0)rotate(-45)")
         .style("text-anchor", "end");
-    svg.append("g").call(d3.axisLeft(yScale).ticks(5));
+        
+    svg.append("g").call(d3.axisLeft(yScale).ticks(5)); 
+
+    /* Eixo X (sem os textos)
+    svg.append("g")
+        .attr("transform", `translate(0, ${height})`)
+        .call(d3.axisBottom(xScale))
+        .selectAll(".tick text")
+        .remove();*/
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)") // Rotaciona o texto para ficar vertical
+        .attr("y", 0 - margin.left) // Posiciona à esquerda do eixo Y
+        .attr("x", 0 - (height / 2)) // Centraliza na altura do eixo
+        .attr("dy", "1em") // Dá um pequeno espaçamento
+        .style("text-anchor", "middle") // Garante que a rotação seja pelo centro
+        .style("font-size", "10px")
+        .style("font-weight", "bold")
+        .style("fill", "#555")
+        .text(yAxisLabel); // Usa o texto passado como parâmetro
 
     // 5. Desenhar as barras empilhadas
     svg.append("g")
@@ -775,15 +808,24 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
         .attr("y", d => yScale(d[1])) // d[1] é o topo do segmento
         .attr("height", d => yScale(d[0]) - yScale(d[1])) // d[0] é a base
         .attr("width", xScale.bandwidth())
+        .style("cursor", "pointer") // Adiciona o cursor de clique
+        .on("click", (event, d) => {
+            showPlayerDetails(d.data); // d.data contém o objeto original do jogador
+        })
         // 6. Adicionar interatividade de mouseover
         .on("mouseover", function(event, d) {
             tooltip.style("opacity", 1);
             // d.data contém o objeto original do jogador
             const jogadorData = d.data;
             tooltip.html(`
-                <strong>${jogadorData.nome_jogador}</strong><br/>
-                <span style="color:${colors.amarelos};">●</span> Amarelos: ${jogadorData.amarelos}<br/>
-                <span style="color:${colors.vermelhos};">●</span> Vermelhos: ${jogadorData.vermelhos}
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <img src="${jogadorData.logo_url_time}" style="width: 25px; height: 25px;" referrerpolicy="no-referrer">
+                    <div>
+                        <strong>${jogadorData.nome_jogador}</strong><br/>
+                        <span style="color:${colors.amarelos};">●</span> Amarelos: ${jogadorData.amarelos}<br/>
+                        <span style="color:${colors.vermelhos};">●</span> Vermelhos: ${jogadorData.vermelhos}
+                    </div>
+                </div>
             `)
             .style("left", (event.pageX + 15) + "px")
             .style("top", (event.pageY - 28) + "px");
@@ -793,9 +835,9 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
         });
 }
 
-/**
- * Cria um gráfico de barras horizontais para o % de defesas dos goleiros.
- */
+
+//Cria um gráfico de barras horizontais para o % de defesas dos goleiros.
+ 
 function createGoalkeeperBarChart(data) {
     const selector = "#goleiro-barras";
     const container = d3.select(selector);
@@ -829,6 +871,10 @@ function createGoalkeeperBarChart(data) {
         .attr("x", 0)
         .attr("height", yScale.bandwidth())
         .attr("width", d => xScale(+d.pct_defesas))
+        .style("cursor", "pointer")
+        .on("click", (event, d) => {
+            showGoalkeeperDetails(d, data); // Passa o goleiro clicado e todos os dados
+        })
         .on("mouseover", (event, d) => {
             tooltip.style("opacity", 1).html(`
                 <div style="display: flex; align-items: center;">
@@ -843,14 +889,11 @@ function createGoalkeeperBarChart(data) {
             .style("left", (event.pageX + 15) + "px")
             .style("top", (event.pageY - 28) + "px");
         })
-}
+        .on("mouseout", () => tooltip.style("opacity", 0));
+} 
 
-
-/**
- * Cria o gráfico de dispersão para a análise de goleiros.
- */
-function createGoalkeeperScatterPlot(data) {
-    const selector = "#goleiro-dispersao";
+//Cria o gráfico de dispersão para a análise de goleiros. 
+function createGoalkeeperScatterPlot(data, selector) {    
     const container = d3.select(selector);
     container.html("");
 
@@ -872,20 +915,22 @@ function createGoalkeeperScatterPlot(data) {
     svg.append("g").call(d3.axisLeft(yScale).tickFormat(d => `${d.toFixed(1)}%`));
     svg.append("text").attr("x", width / 2).attr("y", height + 45).text("Defesas por 90 Minutos (Volume)").style("text-anchor", "middle").style("font-weight", "bold");
     svg.append("text").attr("transform", "rotate(-90)").attr("y", -45).attr("x", -height / 2).text("% de Defesas (Eficiência)").style("text-anchor", "middle").style("font-weight", "bold");
-
-    // SUBSTITUÍMOS .selectAll("circle") por .selectAll("image")
+    
     svg.append("g")
         .selectAll("image")
         .data(data)
         .enter()
         .append("image")
-        .attr("x", d => xScale(+d.defesas_p90) - 15) // Centraliza a imagem no ponto
-        .attr("y", d => yScale(+d.pct_defesas) - 15) // Centraliza a imagem no ponto
+        .attr("x", d => xScale(+d.defesas_p90) - 15) 
+        .attr("y", d => yScale(+d.pct_defesas) - 15) 
         .attr("width", 30)
         .attr("height", 30)
         .attr("href", d => d.logo_url_time)
         .attr("referrerpolicy", "no-referrer")
         .style("cursor", "pointer")
+        .on("click", (event, d) => {
+            showGoalkeeperDetails(d, data); // Passa o goleiro clicado e todos os dados
+        })
         .on("mouseover", (event, d) => {
             tooltip.style("opacity", 1).html(`
                  <div style="display: flex; align-items: center;">
@@ -1008,14 +1053,281 @@ function createScatterPlot(data) {
         });
 }
 
+function showPlayerDetails(playerData) {
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+    const tempoQueryParam = selectedTempoId ? `?id_tempo=${selectedTempoId}` : '';
+    const panel = document.getElementById('player-details-panel');
+
+    document.getElementById('player-name-details').textContent = 'Carregando...';
+    document.getElementById('player-photo-details').src = '';
+    document.getElementById('team-logo-details').src = '';
+    d3.select("#radar-chart-details").html("");
+    d3.select("#radar-stats-list").html("");
+    panel.style.display = 'block';
+
+    fetch(`${API_BASE_URL}/jogador-detalhes/${playerData.id_jogador}${tempoQueryParam}`)
+        .then(res => res.json())
+        .then(details => {
+            if (details) {
+                document.getElementById('player-name-details').textContent = details.nome_jogador;
+                document.getElementById('player-photo-details').src = details.logo_url_jogador;
+                document.getElementById('team-logo-details').src = details.logo_url_time;
+                
+                // Chama as duas funções de exibição
+                createRadarChart(details, "#radar-chart-details");
+                displayRadarStatsList(details);
+
+                panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        })
+        .catch(error => console.error('Erro ao buscar detalhes do jogador:', error));
+}
+
+/** Esconde o painel de detalhes. */
+function hidePlayerDetails() {
+    document.getElementById('player-details-panel').style.display = 'none';
+}
+
+/** Cria o Radar Chart com os dados do jogador. */
+function createRadarChart(playerData, selector) {
+    const container = d3.select(selector);
+    container.html("");
+
+    const margin = { top: 50, right: 50, bottom: 50, left: 50 };
+    const width = 400 - margin.left - margin.right;
+    const height = 300 - margin.top - margin.bottom;
+    const radius = Math.min(width, height) / 2;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${(width / 2) + margin.left}, ${(height / 2) + margin.top})`);
+    
+    const safeDivide = (n, d) => (d ? n / d : 0);
+    const stats = [
+        { axis: "Nota", value: safeDivide(playerData.nota, playerData.max_nota) },
+        { axis: "Gols", value: safeDivide(playerData.gols, playerData.max_gols) },
+        { axis: "Assistências", value: safeDivide(playerData.assistencias, playerData.max_assistencias) },
+        { axis: "Participações", value: safeDivide(playerData.participacoes_em_gol, playerData.max_participacoes) },
+        { axis: "Minutos", value: safeDivide(playerData.minutos_jogados, playerData.max_minutos) }
+    ];
+    
+    const angleSlice = Math.PI * 2 / stats.length;
+    const rScale = d3.scaleLinear().range([0, radius]).domain([0, 1]);
+
+    // Desenha grade e eixos
+    svg.append("g").selectAll("line").data(stats).enter().append("line")
+        .attr("x1", 0).attr("y1", 0)
+        .attr("x2", (d, i) => rScale(1) * Math.cos(angleSlice * i - Math.PI/2))
+        .attr("y2", (d, i) => rScale(1) * Math.sin(angleSlice * i - Math.PI/2))
+        .style("stroke", "#cdcdcd").style("stroke-width", "1px");
+
+    svg.append("g").selectAll("text").data(stats).enter().append("text")
+        .attr("x", (d, i) => rScale(1.15) * Math.cos(angleSlice * i - Math.PI/2))
+        .attr("y", (d, i) => rScale(1.15) * Math.sin(angleSlice * i - Math.PI/2))
+        .text(d => d.axis)
+        .style("text-anchor", "middle").style("font-size", "12px");
+
+    // Desenha área do radar
+    const radarLine = d3.lineRadial().angle((d, i) => i * angleSlice).radius(d => rScale(d.value));
+    svg.append("path").datum(stats)
+       .attr("d", d => radarLine(d) + "Z")
+       .style("fill", "#1f77b4").style("fill-opacity", 0.7);
+}
+
+/** Popula a lista de estatísticas ao lado do Radar Chart (VERSÃO FINAL CORRIGIDA). */
+function displayRadarStatsList(playerData) {
+    const container = d3.select("#radar-stats-list");
+    container.html("");
+
+    const safeDivide = (n, d) => {
+        const num = parseFloat(n) || 0;
+        const den = parseFloat(d) || 0;
+        if (den === 0) return 0;
+        return num / den;
+    };
+
+    // Usamos parseFloat() e '|| 0' para garantir que temos um número válido antes de continuar.
+    const stats = [
+        { label: "Nota", value: parseFloat(playerData.nota || 0), max: parseFloat(playerData.max_nota || 0) },
+        { label: "Gols", value: parseFloat(playerData.gols || 0), max: parseFloat(playerData.max_gols || 0) },
+        { label: "Assistências", value: parseFloat(playerData.assistencias || 0), max: parseFloat(playerData.max_assistencias || 0) },
+        { label: "Participações", value: parseFloat(playerData.participacoes_em_gol || 0), max: parseFloat(playerData.max_participacoes || 0) },
+        { label: "Minutos Jogados", value: parseFloat(playerData.minutos_jogados || 0), max: parseFloat(playerData.max_minutos || 0) }
+    ];
+
+    const list = container.append("ul").attr("class", "stats-list");
+
+    stats.forEach(stat => {
+        // O cálculo da porcentagem agora também é seguro.
+        const percentage = safeDivide(stat.value, stat.max) * 100;
+        const listItem = list.append("li").attr("class", "stat-item");
+        
+        const header = listItem.append("div").attr("class", "stat-header");
+        header.append("span").attr("class", "stat-label").text(stat.label);
+        // Agora stat.value é garantidamente um número, então .toFixed(0) funciona.
+         const valueSpan = header.append("span").attr("class", "stat-value");
+        if (stat.label === "Nota") {
+            // Mostra a nota com duas casas decimais
+            valueSpan.text(stat.value.toFixed(2));
+        } else {
+            // Mostra as outras estatísticas como números inteiros
+            valueSpan.text(stat.value.toFixed(0));
+        }
+
+        const barContainer = listItem.append("div").attr("class", "stat-bar-container");
+        barContainer.append("div")
+            .attr("class", "stat-bar")
+            .style("width", "0%")
+            .transition().duration(500)
+            .style("width", `${percentage}%`);
+    });
+}
+
+/** Cria o Radar Chart específico para GOLEIROS. */
+function createGoalkeeperRadarChart(gkData, maxValues) {
+    const selector = "#radar-chart-details";
+    const container = d3.select(selector);
+    container.html("");
+    
+    const margin = { top: 50, right: 50, bottom: 50, left: 50 };
+    const width = 400 - margin.left - margin.right;
+    const height = 300 - margin.top - margin.bottom;
+    const radius = Math.min(width, height) / 2;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${(width / 2) + margin.left}, ${(height / 2) + margin.top})`);
+    
+    const safeDivide = (n, d) => (d ? n / d : 0);
+
+    // Métricas para goleiros
+    const stats = [
+        { axis: "Nota", value: safeDivide(gkData.nota, maxValues.max_nota) },
+        { axis: "% Defesas", value: safeDivide(gkData.pct_defesas, maxValues.max_pct_defesas) },
+        { axis: "Defesas p/ 90", value: safeDivide(gkData.defesas_p90, maxValues.max_defesas_p90) },
+        { axis: "Gols Sofridos", value: safeDivide(gkData.gols_sofridos, maxValues.max_gols_sofridos)}, // Invertido: menos é melhor
+        { axis: "Defesas", value: safeDivide(gkData.defesas, maxValues.max_defesas) }
+    ];
+    // Invertemos a escala de gols sofridos, pois um valor baixo é melhor
+    const golsSofridosStat = stats.find(s => s.axis === "Gols Sofridos");
+    if (golsSofridosStat) {
+        golsSofridosStat.value = 1 - golsSofridosStat.value;
+    }
+
+    const angleSlice = Math.PI * 2 / stats.length;
+    const rScale = d3.scaleLinear().range([0, radius]).domain([0, 1]);
+
+    // Desenha grade e eixos
+    svg.append("g").selectAll("line").data(stats).enter().append("line")
+        .attr("x1", 0).attr("y1", 0)
+        .attr("x2", (d, i) => rScale(1) * Math.cos(angleSlice * i - Math.PI/2))
+        .attr("y2", (d, i) => rScale(1) * Math.sin(angleSlice * i - Math.PI/2))
+        .style("stroke", "#cdcdcd").style("stroke-width", "1px");
+
+    svg.append("g").selectAll("text").data(stats).enter().append("text")
+        .attr("x", (d, i) => rScale(1.15) * Math.cos(angleSlice * i - Math.PI/2))
+        .attr("y", (d, i) => rScale(1.15) * Math.sin(angleSlice * i - Math.PI/2))
+        .text(d => d.axis)
+        .style("text-anchor", "middle").style("font-size", "12px");
+
+    // Desenha área do radar
+    const radarLine = d3.lineRadial().angle((d, i) => i * angleSlice).radius(d => rScale(d.value));
+    svg.append("path").datum(stats)
+       .attr("d", d => radarLine(d) + "Z")
+       .style("fill", "#2ca02c").style("fill-opacity", 0.7); // Cor diferente para goleiros
+}
+
+/** Popula a lista de estatísticas específica para GOLEIROS. */
+function displayGoalkeeperStatsList(gkData, maxValues) {
+    const container = d3.select("#radar-stats-list");
+    container.html("");
+
+    const safeDivide = (n, d) => (d ? n / d : 0);
+    const stats = [
+        { label: "Nota", value: parseFloat(gkData.nota || 0), max: maxValues.max_nota },
+        { label: "% Defesas", value: parseFloat(gkData.pct_defesas || 0), max: maxValues.max_pct_defesas, suffix: '%' },
+        { label: "Defesas p/ 90 min", value: parseFloat(gkData.defesas_p90 || 0), max: maxValues.max_defesas_p90 },
+        { label: "Defesas (Estimado)", value: parseInt(gkData.defesas || 0), max: maxValues.max_defesas },
+        { label: "Gols Sofridos", value: parseInt(gkData.gols_sofridos || 0), max: maxValues.max_gols_sofridos }
+    ];
+
+    const list = container.append("ul").attr("class", "stats-list");
+
+    stats.forEach(stat => {
+        const percentage = safeDivide(stat.value, stat.max) * 100;
+        const listItem = list.append("li").attr("class", "stat-item");
+        
+        const header = listItem.append("div").attr("class", "stat-header");
+        header.append("span").attr("class", "stat-label").text(stat.label);
+        
+        let displayValue = stat.label.includes('%') || stat.label.includes('Nota') || stat.label.includes('p/ 90') ? stat.value.toFixed(2) : stat.value.toFixed(0);
+        if (stat.suffix) displayValue += stat.suffix;
+        header.append("span").attr("class", "stat-value").text(displayValue);
+
+        const barContainer = listItem.append("div").attr("class", "stat-bar-container");
+        barContainer.append("div").attr("class", "stat-bar").style("width", "0%").transition().duration(500).style("width", `${percentage}%`);
+    });
+}
+
+/** Prepara os dados e exibe o painel de detalhes para um goleiro. */
+function showGoalkeeperDetails(clickedGkData, allGkData) {
+    const panel = document.getElementById('player-details-panel');
+
+    // Calcula os valores máximos a partir do dataset completo
+    const maxValues = {
+        max_nota: d3.max(allGkData, d => +d.nota),
+        max_pct_defesas: d3.max(allGkData, d => +d.pct_defesas),
+        max_defesas_p90: d3.max(allGkData, d => +d.defesas_p90),
+        max_defesas: d3.max(allGkData, d => +d.defesas),
+        max_gols_sofridos: d3.max(allGkData, d => +d.gols_sofridos)
+    };
+
+    // Popula o cabeçalho do painel
+    document.getElementById('player-name-details').textContent = clickedGkData.nome_jogador;
+    document.getElementById('player-photo-details').src = clickedGkData.logo_url_jogador;
+    document.getElementById('team-logo-details').src = clickedGkData.logo_url_time;
+    panel.style.display = 'block';
+
+    // Chama as funções de desenho específicas para goleiros
+    createGoalkeeperRadarChart(clickedGkData, maxValues);
+    displayGoalkeeperStatsList(clickedGkData, maxValues);
+
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 // ----- INICIALIZAÇÃO DA PÁGINA -----
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
     updateAllVisualizations(); // Esta função agora carrega TUDO
 
+    document.getElementById('details-close-btn').addEventListener('click', hidePlayerDetails);
+
     // O evento de 'change' para o filtro de time já chama a função correta
     document.querySelector('#time-filter').addEventListener('change', updateAllVisualizations);
     
     // O evento do filtro de temporada deve atualizar tudo, exceto os gráficos de jogadores
-    document.querySelector('#temporada-filter').addEventListener('change', updateAllVisualizations);    
+    document.querySelector('#temporada-filter').addEventListener('change', updateAllVisualizations); 
+    
+    const tabButtons = document.querySelectorAll(".tab-button");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+
+    tabButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            // 1. Remove a classe 'active' de todos os botões e painéis
+            tabButtons.forEach(btn => btn.classList.remove("active"));
+            tabPanes.forEach(pane => pane.classList.remove("active"));
+
+            // 2. Adiciona a classe 'active' ao botão clicado
+            button.classList.add("active");
+
+            // 3. Adiciona a classe 'active' ao painel correspondente
+            const targetPaneId = button.getAttribute("data-target");
+            const targetPane = document.querySelector(targetPaneId);
+            if (targetPane) {
+                targetPane.classList.add("active");
+            }
+        });
+    });
 });
