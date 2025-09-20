@@ -539,7 +539,85 @@ app.get('/api/estilos-de-jogo', async (req, res) => {
     }
 });
 
-// Rota 11: Lista de times
+// Rota 11: Análise detalhada de Goleiros
+app.get('/api/analise-goleiros', async (req, res) => {
+    try {
+        const { id_time, id_tempo } = req.query;
+
+        let sql = `
+            WITH GoleiroMinutos AS (                
+                SELECT
+                    f.id_jogador,
+                    f.id_clube,
+                    f.id_tempo,
+                    SUM(f.gols_sofridos) as gols_sofridos,
+                    SUM(f.minutos_jogados) as minutos_jogados
+                FROM fato_jogador_geral f
+                WHERE f.gols_sofridos > 0
+                GROUP BY f.id_jogador, f.id_clube, f.id_tempo
+            ),
+            TimeDefesas AS (                
+                SELECT
+                    fct.id_time,
+                    fct.id_tempo,
+                    SUM(fct.defesas_goleiro_total) as total_defesas_time
+                FROM fato_estatisticas_clube_temporal fct
+                GROUP BY fct.id_time, fct.id_tempo
+            ),
+            TimeTotalGkMinutos AS (                
+                SELECT
+                    id_clube,
+                    id_tempo,
+                    SUM(minutos_jogados) as total_minutos_goleiros_time
+                FROM GoleiroMinutos
+                GROUP BY id_clube, id_tempo
+            )            
+            SELECT
+                j.nome_jogador,
+                t.logo_url_time,
+                gs.gols_sofridos,
+                gs.minutos_jogados,                
+                ROUND(td.total_defesas_time * (gs.minutos_jogados / tgk.total_minutos_goleiros_time)) AS defesas,                
+                (ROUND(td.total_defesas_time * (gs.minutos_jogados / tgk.total_minutos_goleiros_time)) / (ROUND(td.total_defesas_time * (gs.minutos_jogados / tgk.total_minutos_goleiros_time)) + gs.gols_sofridos)) * 100 AS pct_defesas,
+                (gs.gols_sofridos / gs.minutos_jogados) * 90 AS gols_sofridos_p90,
+                (ROUND(td.total_defesas_time * (gs.minutos_jogados / tgk.total_minutos_goleiros_time)) / gs.minutos_jogados) * 90 AS defesas_p90
+            FROM GoleiroMinutos gs
+            JOIN TimeDefesas td ON gs.id_clube = td.id_time AND gs.id_tempo = td.id_tempo
+            JOIN TimeTotalGkMinutos tgk ON gs.id_clube = tgk.id_clube AND gs.id_tempo = tgk.id_tempo
+            JOIN dim_jogador j ON gs.id_jogador = j.id_jogador
+            JOIN dim_time t ON gs.id_clube = t.id_time            
+            WHERE (ROUND(td.total_defesas_time * (gs.minutos_jogados / tgk.total_minutos_goleiros_time)) + gs.gols_sofridos) > 0
+              AND gs.minutos_jogados > 0
+        `;
+
+        const params = [];
+        const whereClausesFinais = [];
+
+        if (id_time) {
+            whereClausesFinais.push(`gs.id_clube = ?`);
+            params.push(id_time);
+        }
+
+        if (id_tempo) {
+            whereClausesFinais.push(`gs.id_tempo = ?`);
+            params.push(id_tempo);
+        } else {
+            whereClausesFinais.push(`gs.id_tempo IN (?, ?, ?)`);
+            params.push(...[1, 276, 549]);
+        }        
+        
+        sql += ` AND ${whereClausesFinais.join(' AND ')}`;
+        sql += ` HAVING gs.minutos_jogados > 900`; 
+        sql += ` ORDER BY pct_defesas DESC`;
+
+        const data = await executeQuery(sql, params);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 12: Lista de times
 app.get('/api/times', async (req, res) => {
     try {
         const sql = `
@@ -555,7 +633,7 @@ app.get('/api/times', async (req, res) => {
     }
 });
 
-// Rota 12: Listar AS TEMPORADAS VÁLIDAS para o filtro
+// Rota 13: Listar AS TEMPORADAS VÁLIDAS para o filtro
 app.get('/api/temporadas', async (req, res) => {
     try {
         // A query agora busca APENAS pelos IDs válidos que você informou.

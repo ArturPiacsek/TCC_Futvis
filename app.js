@@ -12,6 +12,7 @@ function updateAllVisualizations() {
     loadBubbleMap();
     loadHistogram();
     loadScatterPlot();
+    loadGoalkeeperAnalysis();
 }
 
 /**
@@ -144,6 +145,33 @@ function fetchAndDrawTable(apiUrl, selector, headers, keys) {
             console.error(`Erro ao carregar dados de ${apiUrl}:`, error);
             document.querySelector(selector).innerHTML = `<p class="error-message">Não foi possível carregar os dados.</p>`;
         });
+}
+
+/**
+ * Função principal para carregar os dados da análise de goleiros.
+ */
+function loadGoalkeeperAnalysis() {
+    // Lê ambos os filtros
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+
+    const queryParams = [];
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+    fetch(`${API_BASE_URL}/analise-goleiros${queryString}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                createGoalkeeperBarChart(data);
+                createGoalkeeperScatterPlot(data);
+            } else {
+                d3.select("#goleiro-barras").html("<p>Nenhum dado de goleiro encontrado para esta combinação de filtros.</p>");
+                d3.select("#goleiro-dispersao").html("<p>Nenhum dado de goleiro encontrado para esta combinação de filtros.</p>");
+            }
+        })
+        .catch(error => console.error('Erro ao carregar análise de goleiros:', error));
 }
 
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
@@ -764,6 +792,117 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
             tooltip.style("opacity", 0);
         });
 }
+
+/**
+ * Cria um gráfico de barras horizontais para o % de defesas dos goleiros.
+ */
+function createGoalkeeperBarChart(data) {
+    const selector = "#goleiro-barras";
+    const container = d3.select(selector);
+    container.html("");
+
+    const top10Data = data.slice(0, 10); // Pega apenas os 10 melhores
+
+    const margin = { top: 20, right: 30, bottom: 40, left: 150 }; // Margem maior para nomes
+    const width = 1000 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    const tooltip = d3.select('.tooltip');
+
+    const xScale = d3.scaleLinear().domain([0, d3.max(top10Data, d => +d.pct_defesas)]).range([0, width]);
+    const yScale = d3.scaleBand().domain(top10Data.map(d => d.nome_jogador)).range([0, height]).padding(0.1);
+
+    svg.append("g").call(d3.axisLeft(yScale));
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale).tickFormat(d => `${d.toFixed(1)}%`));
+
+    svg.selectAll(".bar")
+        .data(top10Data)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("y", d => yScale(d.nome_jogador))
+        .attr("x", 0)
+        .attr("height", yScale.bandwidth())
+        .attr("width", d => xScale(+d.pct_defesas))
+        .on("mouseover", (event, d) => {
+            tooltip.style("opacity", 1).html(`
+                <div style="display: flex; align-items: center;">
+                    <img src="${d.logo_url_time}" style="width: 25px; height: 25px; margin-right: 8px;" referrerpolicy="no-referrer">
+                    <div>
+                        <strong>${d.nome_jogador}</strong><br/>
+                        % Defesas: ${parseFloat(d.pct_defesas).toFixed(2)}%<br/>
+                        Defesas (estimado): ${d.defesas} | Gols Sofridos: ${d.gols_sofridos}
+                    </div>
+                </div>
+            `)
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+}
+
+
+/**
+ * Cria o gráfico de dispersão para a análise de goleiros.
+ */
+function createGoalkeeperScatterPlot(data) {
+    const selector = "#goleiro-dispersao";
+    const container = d3.select(selector);
+    container.html("");
+
+    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+    const width = 1000 - margin.left - margin.right;
+    const height = 650 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    const tooltip = d3.select('.tooltip');
+
+    const xScale = d3.scaleLinear().domain(d3.extent(data, d => +d.defesas_p90)).nice().range([0, width]);
+    const yScale = d3.scaleLinear().domain(d3.extent(data, d => +d.pct_defesas)).nice().range([height, 0]);
+
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+    svg.append("g").call(d3.axisLeft(yScale).tickFormat(d => `${d.toFixed(1)}%`));
+    svg.append("text").attr("x", width / 2).attr("y", height + 45).text("Defesas por 90 Minutos (Volume)").style("text-anchor", "middle").style("font-weight", "bold");
+    svg.append("text").attr("transform", "rotate(-90)").attr("y", -45).attr("x", -height / 2).text("% de Defesas (Eficiência)").style("text-anchor", "middle").style("font-weight", "bold");
+
+    // SUBSTITUÍMOS .selectAll("circle") por .selectAll("image")
+    svg.append("g")
+        .selectAll("image")
+        .data(data)
+        .enter()
+        .append("image")
+        .attr("x", d => xScale(+d.defesas_p90) - 15) // Centraliza a imagem no ponto
+        .attr("y", d => yScale(+d.pct_defesas) - 15) // Centraliza a imagem no ponto
+        .attr("width", 30)
+        .attr("height", 30)
+        .attr("href", d => d.logo_url_time)
+        .attr("referrerpolicy", "no-referrer")
+        .style("cursor", "pointer")
+        .on("mouseover", (event, d) => {
+            tooltip.style("opacity", 1).html(`
+                 <div style="display: flex; align-items: center;">
+                    <img src="${d.logo_url_time}" style="width: 25px; height: 25px; margin-right: 8px;" referrerpolicy="no-referrer">
+                    <div>
+                        <strong>${d.nome_jogador}</strong><br/>
+                        % Defesas: ${parseFloat(d.pct_defesas).toFixed(2)}%<br/>
+                        Defesas p/ 90min: ${parseFloat(d.defesas_p90).toFixed(2)}
+                    </div>
+                </div>
+            `)
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
+}
+
 
     // ----- Função para carregar os dados do mapa -----
     function loadBubbleMap() {
