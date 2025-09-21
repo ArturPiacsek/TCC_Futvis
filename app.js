@@ -10,7 +10,8 @@ function updateAllVisualizations() {
     loadBubbleMap();
     loadHistogram();
     loadScatterPlot();
-    loadGoalkeeperAnalysis();    
+    loadGoalkeeperAnalysis();
+    loadChordDiagram();    
 }
 
 
@@ -144,9 +145,7 @@ function fetchAndDrawTable(apiUrl, selector, headers, keys) {
         });
 }
 
-
-//Função principal para carregar os dados da análise de goleiros.
- 
+//Função principal para carregar os dados da análise de goleiros. 
 function loadGoalkeeperAnalysis() {
     // Lê ambos os filtros
     const selectedTeamId = document.querySelector('#time-filter').value;
@@ -170,6 +169,30 @@ function loadGoalkeeperAnalysis() {
         })
         .catch(error => console.error('Erro ao carregar análise de goleiros:', error));
 }
+
+// ----- Função para carregar os dados do Gráfico de Acordes -----
+function loadChordDiagram() {
+    const selectElement = document.querySelector('#temporada-filter');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    
+    // Pega o ANO (texto da opção) em vez do ID (valor da opção)
+    // Se a opção selecionada for a default ("Todos os Anos"), o valor é "", então o texto não é pego.
+    const selectedYear = selectedOption.value ? selectedOption.text : '';
+
+    const tempoQueryParam = selectedYear ? `?ano=${selectedYear}` : '';
+
+    fetch(`${API_BASE_URL}/fluxo-vitorias${tempoQueryParam}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                createChordDiagram(data);
+            } else {
+                d3.select("#chord-diagram-chart").html("<p>Nenhum dado de confronto encontrado para este período.</p>");
+            }
+        })
+        .catch(error => console.error('Erro ao carregar dados para o gráfico de acordes:', error));
+}
+
 
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
     const container = d3.select(selector);
@@ -1295,6 +1318,84 @@ function showGoalkeeperDetails(clickedGkData, allGkData) {
     displayGoalkeeperStatsList(clickedGkData, maxValues);
 
     panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function createChordDiagram(data) {
+    const selector = "#chord-diagram-chart";
+    const container = d3.select(selector);
+    container.html("");
+
+    const width = 800;
+    const height = 800;
+    const outerRadius = Math.min(width, height) * 0.5 - 100;
+    const innerRadius = outerRadius - 20;
+
+    const svg = container.append("svg")
+        .attr("viewBox", [-width / 2, -height / 2, width, height]);
+    
+    // 1. Transformar os dados: criar a matriz de adjacência
+    const names = Array.from(new Set(data.flatMap(d => [d.source, d.target]))).sort();
+    const nameToIndex = new Map(names.map((name, i) => [name, i]));
+    const matrix = Array.from({ length: names.length }, () => new Array(names.length).fill(0));
+    data.forEach(d => {
+        matrix[nameToIndex.get(d.source)][nameToIndex.get(d.target)] = d.value;
+    });
+
+    // 2. Criar o layout de acordes
+    const chord = d3.chord()
+        .padAngle(0.05)
+        .sortSubgroups(d3.descending);
+
+    const chords = chord(matrix);
+    
+    const color = d3.scaleOrdinal(d3.schemeCategory10).domain(names);
+
+    // 3. Desenhar os arcos externos (grupos)
+    const group = svg.append("g")
+        .selectAll("g")
+        .data(chords.groups)
+        .join("g");
+
+    const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
+
+    group.append("path")
+        .attr("fill", d => color(names[d.index]))
+        .attr("stroke", d => d3.rgb(color(names[d.index])).darker())
+        .attr("d", arc)
+        .on("mouseover", (event, d) => {
+             const totalWins = d3.sum(matrix[d.index]);
+             tooltip.style("opacity", 1).html(`<strong>${names[d.index]}</strong><br>Total de Vitórias: ${totalWins}`);
+        })
+        .on("mousemove", (event) => tooltip.style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px"))
+        .on("mouseout", () => tooltip.style("opacity", 0));
+        
+    // Adiciona os nomes dos times nos arcos
+    group.append("text")
+        .each(d => (d.angle = (d.startAngle + d.endAngle) / 2))
+        .attr("transform", d => `rotate(${(d.angle * 180 / Math.PI - 90)}) translate(${outerRadius + 5}) ${d.angle > Math.PI ? "rotate(180)" : ""}`)
+        .attr("text-anchor", d => d.angle > Math.PI ? "end" : null)
+        .text(d => names[d.index])
+        .style("font-size", "12px");
+
+
+    // 4. Desenhar as fitas (ribbons/acordes)
+    const ribbon = d3.ribbon().radius(innerRadius);
+    const ribbons = svg.append("g")
+        .attr("fill-opacity", 0.67)
+        .selectAll("path")
+        .data(chords)
+        .join("path")
+        .attr("d", ribbon)
+        .attr("fill", d => color(names[d.source.index]))
+        .attr("stroke", d => d3.rgb(color(names[d.source.index])).darker())
+        .on("mouseover", (event, d) => {
+             tooltip.style("opacity", 1)
+                    .html(`${names[d.source.index]} venceu ${names[d.target.index]}<br><strong>${d.source.value}</strong> vezes`);
+        })
+        .on("mousemove", (event) => tooltip.style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px"))
+        .on("mouseout", () => tooltip.style("opacity", 0));
+        
+    const tooltip = d3.select(".tooltip");
 }
 
 // ----- INICIALIZAÇÃO DA PÁGINA -----

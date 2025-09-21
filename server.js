@@ -687,7 +687,52 @@ app.get('/api/jogador-detalhes/:id_jogador', async (req, res) => {
     }
 });
 
-// Rota 13: Lista de times
+// Rota 13: Dados para o Gráfico de Acordes (Fluxo de Vitórias)
+app.get('/api/fluxo-vitorias', async (req, res) => {
+    try {
+        const { ano } = req.query; // Agora recebemos o 'ano'
+
+        let sql = `
+            SELECT
+                vencedor.nome as source,
+                perdedor.nome as target,
+                COUNT(*) as value
+            FROM fato_partida fp
+            JOIN dim_time vencedor ON fp.id_vencedor = vencedor.id_time
+            JOIN dim_time perdedor ON 
+                (CASE 
+                    WHEN fp.id_mandante = fp.id_vencedor THEN fp.id_visitante 
+                    ELSE fp.id_mandante 
+                END) = perdedor.id_time
+            WHERE 
+                fp.id_vencedor IS NOT NULL AND fp.id_vencedor != 0
+        `;
+        
+        const params = [];
+
+        // Subconsulta para encontrar todos os id_tempo diários que correspondem ao filtro de ano
+        let subquery = `SELECT id_tempo FROM dim_tempo WHERE data_completa IS NOT NULL`;
+
+        if (ano) {
+            subquery += ` AND ano = ?`;
+            params.push(ano);
+        } else {
+            // Se nenhum ano for selecionado, pega os 3 anos válidos
+            subquery += ` AND ano IN (?, ?, ?)`;
+            params.push(...['2021', '2022', '2023']);
+        }
+        
+        sql += ` AND fp.id_tempo IN (${subquery})`;
+        sql += ` GROUP BY source, target;`;
+
+        const data = await executeQuery(sql, params);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 14: Lista de times
 app.get('/api/times', async (req, res) => {
     try {
         const sql = `
@@ -703,7 +748,7 @@ app.get('/api/times', async (req, res) => {
     }
 });
 
-// Rota 14: Listar AS TEMPORADAS VÁLIDAS para o filtro
+// Rota 15: Listar AS TEMPORADAS VÁLIDAS para o filtro
 app.get('/api/temporadas', async (req, res) => {
     try {
         // A query agora busca APENAS pelos IDs válidos que você informou.
