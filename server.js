@@ -26,6 +26,41 @@ async function executeQuery(sql, params = []) {
     return rows;
 }
 
+// Rota para filtro de times
+app.get('/api/times', async (req, res) => {
+    try {
+        const sql = `
+            SELECT id_time, nome, logo_url_time
+            FROM dim_time
+            ORDER BY nome;
+        `;
+
+        const data = await executeQuery(sql);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota para filtro de TEMPORADAS VÁLIDAS para o filtro
+app.get('/api/temporadas', async (req, res) => {
+    try {
+        // A query agora busca APENAS pelos IDs válidos que você informou.
+        const sql = `
+            SELECT id_tempo, ano 
+            FROM dim_tempo 
+            WHERE id_tempo IN (?, ?, ?) 
+            ORDER BY ano DESC;
+        `;
+        // Passamos os IDs válidos como parâmetros
+        const valid_ids = [1, 276, 549];
+        const data = await executeQuery(sql, valid_ids);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Rota 1: Top 10 Artilheiros
 app.get('/api/artilheiros', async (req, res) => {
     try {
@@ -780,36 +815,93 @@ app.get('/api/disciplina-heatmap', async (req, res) => {
     }
 });
 
-// Rota 15: Lista de times
-app.get('/api/times', async (req, res) => {
+// Rota 15: Taxa de Conversão de Chutes por Time
+app.get('/api/taxa-conversao', async (req, res) => {
     try {
-        const sql = `
-            SELECT id_time, nome, logo_url_time
-            FROM dim_time
-            ORDER BY nome;
+        const { id_tempo } = req.query; // Este gráfico não usa filtro de time, apenas de temporada
+
+        let sql = `
+            SELECT
+                T.id_time,
+                T.nome,
+                T.logo_url_time,                
+                (SUM(FCT.gols_marcados) / SUM(FCT.chutes_total)) * 100 AS taxa_conversao,
+                SUM(FCT.gols_marcados) AS total_gols,
+                SUM(FCT.chutes_total) AS total_chutes,
+                SUM(FCT.chutes_no_gol_total) AS total_chutes_no_gol,
+                SUM(FCT.chutes_fora_total) AS total_chutes_fora,
+                SUM(FCT.impedimentos_total) AS total_impedimentos
+            FROM
+                fato_estatisticas_clube_temporal AS FCT
+            JOIN
+                dim_time AS T ON FCT.id_time = T.id_time
+        `;
+        
+        const params = [];
+        const whereClauses = [`FCT.chutes_total > 0`]; // Evita divisão por zero
+
+        if (id_tempo) {
+            whereClauses.push(`FCT.id_tempo = ?`);
+            params.push(id_tempo);
+        } else {
+            whereClauses.push(`FCT.id_tempo IN (?, ?, ?)`);
+            params.push(...[1, 276, 549]);
+        }
+        
+        sql += ` WHERE ${whereClauses.join(' AND ')}`;
+        sql += `
+            GROUP BY
+                T.id_time, T.nome, T.logo_url_time
+            ORDER BY
+                taxa_conversao DESC;            
         `;
 
-        const data = await executeQuery(sql);
+        const data = await executeQuery(sql, params);
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Rota 16: Listar AS TEMPORADAS VÁLIDAS para o filtro
-app.get('/api/temporadas', async (req, res) => {
+// Rota 16: Detalhes ofensivos de um time para o gráfico de pizza
+app.get('/api/time-detalhes-ofensivos', async (req, res) => {
     try {
-        // A query agora busca APENAS pelos IDs válidos que você informou.
-        const sql = `
-            SELECT id_tempo, ano 
-            FROM dim_tempo 
-            WHERE id_tempo IN (?, ?, ?) 
-            ORDER BY ano DESC;
+        const { id_time, id_tempo } = req.query;
+
+        if (!id_time) {
+            return res.status(400).json({ error: 'id_time é obrigatório' });
+        }
+
+        let sql = `
+            SELECT
+                T.nome,
+                T.logo_url_time,
+                SUM(FCT.chutes_total) as chutes_total,
+                SUM(FCT.chutes_no_gol_total) as chutes_no_gol,
+                SUM(FCT.chutes_fora_total) as chutes_fora,
+                SUM(FCT.impedimentos_total) as impedimentos
+            FROM
+                fato_estatisticas_clube_temporal AS FCT
+            JOIN
+                dim_time AS T ON FCT.id_time = T.id_time
         `;
-        // Passamos os IDs válidos como parâmetros
-        const valid_ids = [1, 276, 549];
-        const data = await executeQuery(sql, valid_ids);
-        res.json(data);
+        
+        const params = [id_time];
+        const whereClauses = [`FCT.id_time = ?`];
+
+        if (id_tempo) {
+            whereClauses.push(`FCT.id_tempo = ?`);
+            params.push(id_tempo);
+        } else {
+            whereClauses.push(`FCT.id_tempo IN (?, ?, ?)`);
+            params.push(...[1, 276, 549]);
+        }
+        
+        sql += ` WHERE ${whereClauses.join(' AND ')}`;
+        sql += ` GROUP BY T.id_time, T.nome, T.logo_url_time;`;
+
+        const data = await executeQuery(sql, params);
+        res.json(data[0]); // Retorna apenas o objeto do time
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

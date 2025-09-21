@@ -3,6 +3,7 @@ const API_BASE_URL = 'http://localhost:3000/api';
 //Função que é chamada QUANDO QUALQUER FILTRO MUDA. 
 function updateAllVisualizations() {
     hidePlayerDetails();
+    hideTeamComparisonPanel();
 
     const faltasBtn = document.getElementById('heatmap-faltas-btn');
     const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
@@ -10,7 +11,7 @@ function updateAllVisualizations() {
         faltasBtn.classList.add('active');
         cartoesBtn.classList.remove('active');
     }
-    
+
     updatePlayerCharts();
     fetchTabelaCampeonato();
     loadTemporalAnalysisCharts();
@@ -20,9 +21,9 @@ function updateAllVisualizations() {
     loadScatterPlot();
     loadGoalkeeperAnalysis();
     loadChordDiagram();
-    loadHeatmap();    
+    loadHeatmap();
+    loadConversionRateChart();   
 }
-
 
 // Atualiza todos os gráficos de jogadores com base nos filtros selecionados. 
 function updatePlayerCharts() {
@@ -244,8 +245,78 @@ function loadHeatmap() {
         .catch(error => console.error('Erro ao carregar dados do heatmap:', error));
 }
 
-// Função para criar Gráfico de Barras
+/** Função principal para carregar os dados da Taxa de Conversão. */
+function loadConversionRateChart() {
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+    const tempoQueryParam = selectedTempoId ? `?id_tempo=${selectedTempoId}` : '';
 
+    // Pega o nome do time selecionado no filtro
+    const timeSelect = document.querySelector('#time-filter');
+    const selectedTeamName = timeSelect.value ? timeSelect.options[timeSelect.selectedIndex].text : null;
+
+    fetch(`${API_BASE_URL}/taxa-conversao${tempoQueryParam}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                // Passa o nome do time selecionado como um novo argumento
+                createHorizontalBarChart(data, selectedTeamName);
+            } else {
+                d3.select("#conversion-rate-chart").html("<p>Nenhum dado encontrado para este período.</p>");
+            }
+        })
+        .catch(error => console.error('Erro ao carregar dados da taxa de conversão:', error));
+}
+
+// Esconde o painel de comparação de times.
+function hideTeamComparisonPanel() {
+    d3.select("#team-comparison-panel").style("display", "none");
+}
+
+/**
+ * Orquestra a exibição do painel de comparação.
+ * @param {object} clickedTeamData - Os dados do time que foi clicado no gráfico de barras.
+ */
+function showTeamComparisonPanel(clickedTeamData) {
+    const panel = d3.select("#team-comparison-panel");
+    const baseContainer = d3.select("#pie-chart-base");
+    const comparisonContainer = d3.select("#pie-chart-comparison");
+
+    const timeSelect = document.querySelector('#time-filter');
+    const selectedTeamId = timeSelect.value;
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+    const tempoQueryParam = selectedTempoId ? `&id_tempo=${selectedTempoId}` : '';
+
+    panel.style("display", "block"); // Mostra o painel
+    baseContainer.html("Carregando...");
+    comparisonContainer.html(""); // Limpa o container de comparação
+
+    // CASO 1: Um time já está selecionado no filtro principal (MODO COMPARAÇÃO)
+    if (selectedTeamId && selectedTeamId != clickedTeamData.id_time) {
+        comparisonContainer.style("display", "block");
+
+        Promise.all([
+            fetch(`${API_BASE_URL}/time-detalhes-ofensivos?id_time=${selectedTeamId}${tempoQueryParam}`),
+            fetch(`${API_BASE_URL}/time-detalhes-ofensivos?id_time=${clickedTeamData.id_time}${tempoQueryParam}`)
+        ])
+        .then(responses => Promise.all(responses.map(res => res.json())))
+        .then(([baseData, comparisonData]) => {
+            createPieChart(baseData, "#pie-chart-base");
+            createPieChart(comparisonData, "#pie-chart-comparison");
+        });
+    } 
+    // CASO 2: Nenhum time no filtro, ou clicou no mesmo time do filtro (MODO VISUALIZAÇÃO SIMPLES)
+    else {
+        comparisonContainer.style("display", "none"); // Esconde o segundo container
+        fetch(`${API_BASE_URL}/time-detalhes-ofensivos?id_time=${clickedTeamData.id_time}${tempoQueryParam}`)
+            .then(res => res.json())
+            .then(data => {
+                createPieChart(data, "#pie-chart-base");
+            });
+    }
+}
+
+
+// Função para criar Gráfico de Barras
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
     const container = d3.select(selector);
     container.html(""); // Limpa o container
@@ -910,7 +981,6 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
         });
 }
 
-
 //Cria um gráfico de barras horizontais para o % de defesas dos goleiros.
  
 function createGoalkeeperBarChart(data) {
@@ -1515,6 +1585,175 @@ function createHeatmap(data, metric) {
             .style("top", (event.pageY - 28) + "px");
         })
         .on("mouseout", () => tooltip.style("opacity", 0));
+}
+
+/**
+ * Cria um gráfico de barras horizontais (VERSÃO COM DESTAQUE).
+ * @param {Array} data - Os dados a serem plotados.
+ * @param {string|null} highlightedTeam - O nome do time a ser destacado.
+ */
+function createHorizontalBarChart(data, highlightedTeam) {
+    const selector = "#conversion-rate-chart";
+    const container = d3.select(selector);
+    container.html("");
+
+    const margin = { top: 20, right: 50, bottom: 50, left: 150 };
+    const width = 700 - margin.left - margin.right;
+    const height = 700 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+    const tooltip = d3.select('.tooltip');
+    
+    const xScale = d3.scaleLinear()
+        .domain([0, d3.max(data, d => +d.taxa_conversao) * 1.1])
+        .range([0, width]);
+
+    const yScale = d3.scaleBand()
+        .domain(data.map(d => d.nome).reverse())
+        .range([height, 0])
+        .padding(0.1);
+
+    svg.append("g").call(d3.axisLeft(yScale));
+    svg.append("g").attr("transform", `translate(0, ${height})`)
+       .call(d3.axisBottom(xScale).tickFormat(d => `${d.toFixed(1)}%`));
+
+    svg.append("text").attr("x", width / 2).attr("y", height + 40).text("Taxa de Conversão (%)").style("text-anchor", "middle");
+
+    // Desenha as barras
+    svg.selectAll(".barras")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("class", "barras")
+        .attr("y", d => yScale(d.nome))
+        .attr("x", 0)
+        .attr("height", yScale.bandwidth())
+        .attr("width", 0)
+        .transition().duration(800)
+        .attr("width", d => xScale(+d.taxa_conversao))    
+        .attr("fill", d => {
+            // Se o nome do time nos dados for igual ao time destacado, pinta de laranja.
+            // Senão, usa a cor padrão azul.
+            return d.nome === highlightedTeam ? "#ff7f0e" : "#1f77b4";
+        });
+        
+    // Adiciona o valor no final da barra
+    svg.selectAll(".bar-label")
+        .data(data)
+        .enter()
+        .append("text")
+        .attr("class", "bar-label")
+        .attr("y", d => yScale(d.nome) + yScale.bandwidth() / 2 + 4)
+        .attr("x", d => xScale(+d.taxa_conversao) + 20)
+        .text(d => `${parseFloat(d.taxa_conversao).toFixed(1)}%`)
+        .style("font-size", "12px")
+        .style("fill", "#333");
+        
+    // Adiciona mouseover para mostrar detalhes
+    svg.selectAll("rect") // Reaplica na mesma seleção para adicionar eventos
+        .on("mouseover", (event, d) => {
+            tooltip.style("opacity", 1).html(`
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <img src="${d.logo_url_time}" style="width: 25px; height: 25px;" referrerpolicy="no-referrer">
+                    <div>
+                        <strong>${d.nome}</strong><br/>
+                        Taxa de Conversão: ${parseFloat(d.taxa_conversao).toFixed(2)}%<br/>
+                        <em>(${d.total_gols} gols em ${d.total_chutes} chutes)</em>
+                    </div>
+                </div>
+            `)
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0))
+        svg.selectAll("rect")
+            .style("cursor", "pointer")
+            .on("click", (event, d) => {
+                showTeamComparisonPanel(d);
+            });     
+}
+
+/**
+ * Cria um gráfico de pizza interativo para os detalhes ofensivos de um time.
+ * @param {object} data - Os dados do time.
+ * @param {string} selector - O seletor do container onde o gráfico será desenhado.
+ */
+function createPieChart(data, selector) {
+    const container = d3.select(selector);
+    container.html(""); // Limpa o container
+
+    // Adiciona o cabeçalho com logo e nome
+    const header = container.append("div").attr("class", "pie-header");
+    header.append("img").attr("src", data.logo_url_time).attr("referrerpolicy", "no-referrer");
+    header.append("h4").text(data.nome);
+
+    const width = 450;
+    const height = 300;
+    const radius = Math.min(width, height) / 2 - 20;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+      .append("g")
+        .attr("transform", `translate(${width / 2}, ${height / 2})`);
+        
+    const tooltip = d3.select('.tooltip');
+    
+    // Prepara os dados para o gráfico de pizza
+    const pieData = {
+        'Chutes no Gol': parseFloat(data.chutes_no_gol || 0),
+        'Chutes Fora': parseFloat(data.chutes_fora || 0),
+        'Impedimentos': parseFloat(data.impedimentos || 0)
+    };
+    const total = Object.values(pieData).reduce((a, b) => a + b, 0);
+
+    const color = d3.scaleOrdinal()
+        .domain(Object.keys(pieData))
+        .range(["#2ca02c", "#d62728", "#ff7f0e"]); // Verde, Vermelho, Laranja
+
+    const pie = d3.pie().value(d => d[1]);
+    const data_ready = pie(Object.entries(pieData));
+
+    const arcGenerator = d3.arc().innerRadius(0).outerRadius(radius);
+
+    svg.selectAll('slices')
+        .data(data_ready)
+        .enter()
+        .append('path')
+        .attr('d', arcGenerator)
+        .attr('fill', d => color(d.data[0]))
+        .attr("stroke", "white")
+        .style("stroke-width", "2px")
+        .on("mouseover", (event, d) => {
+            const percentage = (d.data[1] / total * 100).toFixed(1);
+            tooltip.style("opacity", 1).html(`
+                <strong>${d.data[0]}</strong><br/>
+                Total: ${d.data[1]}<br/>
+                (${percentage}%)
+            `)
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
+        
+        svg.selectAll('allLabels')
+        .data(data_ready)
+        .enter()
+        .append('text')
+        .text(d => {
+            const percentage = total > 0 ? (d.data[1] / total * 100) : 0;
+            // Só mostra o texto se a porcentagem for relevante (ex: > 5%)
+            return percentage > 5 ? `${percentage.toFixed(1)}%` : '';
+        })
+        // Posiciona o texto no centroide (centro geométrico) da fatia
+        .attr('transform', d => `translate(${arcGenerator.centroid(d)})`)
+        .style('text-anchor', 'middle')
+        .style('font-size', '23px')
+        .style('fill', 'white')
+        .style('font-weight', 'bold');
 }
 
 // ----- INICIALIZAÇÃO DA PÁGINA -----
