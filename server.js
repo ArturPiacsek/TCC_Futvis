@@ -732,7 +732,55 @@ app.get('/api/fluxo-vitorias', async (req, res) => {
     }
 });
 
-// Rota 14: Lista de times
+// Rota 14: Dados de disciplina agregados por dia para o Heatmap
+app.get('/api/disciplina-heatmap', async (req, res) => {
+    try {
+        const { id_time, ano } = req.query;
+
+        // CORREÇÃO: Usando os nomes corretos das colunas (ex: 'faltas_mandante')
+        const statsSubquery = id_time ? `
+            (SELECT id_tempo, faltas_mandante AS faltas, (cartoes_amarelos_mandante + cartoes_vermelhos_mandante) AS cartoes FROM fato_partida WHERE id_mandante = ?)
+            UNION ALL
+            (SELECT id_tempo, faltas_visitante AS faltas, (cartoes_amarelos_visitante + cartoes_vermelhos_visitante) AS cartoes FROM fato_partida WHERE id_visitante = ?)
+        ` : `
+            (SELECT id_tempo, faltas_mandante AS faltas, (cartoes_amarelos_mandante + cartoes_vermelhos_mandante) AS cartoes FROM fato_partida)
+            UNION ALL
+            (SELECT id_tempo, faltas_visitante AS faltas, (cartoes_amarelos_visitante + cartoes_vermelhos_visitante) AS cartoes FROM fato_partida)
+        `;
+
+        let sql = `
+            SELECT
+                DT.mes,
+                DT.dia_semana,
+                SUM(Stats.faltas) as total_faltas,
+                SUM(Stats.cartoes) as total_cartoes
+            FROM (${statsSubquery}) AS Stats
+            JOIN dim_tempo AS DT ON Stats.id_tempo = DT.id_tempo
+            WHERE DT.data_completa IS NOT NULL
+        `;
+
+        const params = id_time ? [id_time, id_time] : [];
+        const whereAno = [];
+
+        if (ano) {
+            whereAno.push(`DT.ano = ?`);
+            params.push(ano);
+        } else {
+            whereAno.push(`DT.ano IN (?, ?, ?)`);
+            params.push(...['2021', '2022', '2023']);
+        }
+
+        sql += ` AND ${whereAno.join(' AND ')}`;
+        sql += ` GROUP BY DT.mes, DT.dia_semana ORDER BY DT.mes, DT.dia_semana;`;
+        
+        const data = await executeQuery(sql, params);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 15: Lista de times
 app.get('/api/times', async (req, res) => {
     try {
         const sql = `
@@ -748,7 +796,7 @@ app.get('/api/times', async (req, res) => {
     }
 });
 
-// Rota 15: Listar AS TEMPORADAS VÁLIDAS para o filtro
+// Rota 16: Listar AS TEMPORADAS VÁLIDAS para o filtro
 app.get('/api/temporadas', async (req, res) => {
     try {
         // A query agora busca APENAS pelos IDs válidos que você informou.

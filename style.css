@@ -193,4 +193,20 @@
         .tab-pane.active {
             display: block;
         }
-                        
+        
+        .heatmap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+         .heatmap-toggle button {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        .heatmap-toggle button.active {
+            background-color: #1f77b4;
+            color: white;
+            border-color: #1f77b4;
+        }

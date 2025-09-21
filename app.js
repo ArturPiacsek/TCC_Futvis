@@ -3,6 +3,14 @@ const API_BASE_URL = 'http://localhost:3000/api';
 //Função que é chamada QUANDO QUALQUER FILTRO MUDA. 
 function updateAllVisualizations() {
     hidePlayerDetails();
+
+    const faltasBtn = document.getElementById('heatmap-faltas-btn');
+    const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
+    if (faltasBtn && cartoesBtn) {
+        faltasBtn.classList.add('active');
+        cartoesBtn.classList.remove('active');
+    }
+    
     updatePlayerCharts();
     fetchTabelaCampeonato();
     loadTemporalAnalysisCharts();
@@ -11,7 +19,8 @@ function updateAllVisualizations() {
     loadHistogram();
     loadScatterPlot();
     loadGoalkeeperAnalysis();
-    loadChordDiagram();    
+    loadChordDiagram();
+    loadHeatmap();    
 }
 
 
@@ -193,6 +202,49 @@ function loadChordDiagram() {
         .catch(error => console.error('Erro ao carregar dados para o gráfico de acordes:', error));
 }
 
+/** Função principal para carregar os dados do Heatmap e configurar os controles. */
+function loadHeatmap() {
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const selectElement = document.querySelector('#temporada-filter');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const selectedYear = selectedOption.value ? selectedOption.text : '';
+    
+    const queryParams = [];
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedYear) queryParams.push(`ano=${selectedYear}`);
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+    fetch(`${API_BASE_URL}/disciplina-heatmap${queryString}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                let currentMetric = 'total_faltas';
+
+                // Desenha o gráfico inicial
+                createHeatmap(data, currentMetric);
+
+                // Configura os botões de controle
+                d3.select("#heatmap-faltas-btn").on("click", () => {
+                    currentMetric = 'total_faltas';
+                    d3.select("#heatmap-faltas-btn").classed("active", true);
+                    d3.select("#heatmap-cartoes-btn").classed("active", false);
+                    createHeatmap(data, currentMetric);
+                });
+
+                d3.select("#heatmap-cartoes-btn").on("click", () => {
+                    currentMetric = 'total_cartoes';
+                    d3.select("#heatmap-faltas-btn").classed("active", false);
+                    d3.select("#heatmap-cartoes-btn").classed("active", true);
+                    createHeatmap(data, currentMetric);
+                });
+            } else {
+                d3.select("#heatmap-chart").html("<p>Nenhum dado de disciplina encontrado para esta combinação de filtros.</p>");
+            }
+        })
+        .catch(error => console.error('Erro ao carregar dados do heatmap:', error));
+}
+
+// Função para criar Gráfico de Barras
 
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
     const container = d3.select(selector);
@@ -1396,6 +1448,73 @@ function createChordDiagram(data) {
         .on("mouseout", () => tooltip.style("opacity", 0));
         
     const tooltip = d3.select(".tooltip");
+}
+
+/**
+ * Cria o gráfico de Heatmap
+ * @param {Array} data - Os dados de disciplina por dia.
+ * @param {string} metric - A métrica a ser exibida ('total_faltas' ou 'total_cartoes').
+ */
+function createHeatmap(data, metric) {
+    const selector = "#heatmap-chart";
+    const container = d3.select(selector);
+    container.html("");
+
+    const margin = { top: 30, right: 30, bottom: 50, left: 100 };
+    const width = 1000 - margin.left - margin.right;
+    const height = 350 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+    const tooltip = d3.select('.tooltip');
+
+    // Mapeamento de número do mês para nome
+    const todosMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+    // Pega os números dos meses que existem nos dados, sem repetição, e os ordena.
+    const numerosDosMesesComDados = [...new Set(data.map(d => d.mes))].sort((a, b) => a - b);
+
+    // Converte esses números para os nomes correspondentes.
+    const nomesDosMesesComDados = numerosDosMesesComDados.map(num => todosMeses[num - 1]);
+    
+    const diasSemana = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];    
+    
+    const xScale = d3.scaleBand().domain(nomesDosMesesComDados).range([0, width]).padding(0.05);
+    const yScale = d3.scaleBand().domain(diasSemana).range([height, 0]).padding(0.05);
+
+    const maxValue = d3.max(data, d => +d[metric]);
+    const colorScale = d3.scaleSequential(d3.interpolateYlOrRd).domain([0, maxValue || 1]);
+
+    // Desenha eixos
+    const yAxis = d3.axisLeft(yScale)
+        .tickFormat(d => d.charAt(0).toUpperCase() + d.slice(1).replace("-feira", ""));
+    svg.append("g").call(yAxis);
+    
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+
+    // Desenha as células do heatmap
+    svg.selectAll()
+        .data(data, d => `${d.mes}:${d.dia_semana}`)
+        .enter()
+        .append("rect")        
+        .attr("x", d => xScale(todosMeses[d.mes - 1]))
+        .attr("y", d => yScale(d.dia_semana))
+        .attr("width", xScale.bandwidth())
+        .attr("height", yScale.bandwidth())
+        .style("fill", d => colorScale(+d[metric]))
+        .on("mouseover", (event, d) => {
+            const diaFormatado = d.dia_semana.charAt(0).toUpperCase() + d.dia_semana.slice(1);
+            tooltip.style("opacity", 1).html(`
+                <strong>${diaFormatado}, ${todosMeses[d.mes - 1]}</strong><br/>
+                ${metric === 'total_faltas' ? 'Faltas' : 'Cartões'}: ${d[metric]}
+            `)
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
 }
 
 // ----- INICIALIZAÇÃO DA PÁGINA -----
