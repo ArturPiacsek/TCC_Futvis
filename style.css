@@ -3,6 +3,7 @@
         .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }        
         h1 { text-align: center; color: #333; }
         h2 { color: #555; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+        h3 {text-align: center; color: #333;}
         svg { width: 100%; height: auto; }
         .bar { fill: #007bff; }
         .bar:hover { fill: #0056b3; }

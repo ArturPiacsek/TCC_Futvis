@@ -907,6 +907,186 @@ app.get('/api/time-detalhes-ofensivos', async (req, res) => {
     }
 });
 
+// Rota 17: Ranking de Defesa (Clean Sheets)
+app.get('/api/clean-sheets', async (req, res) => {
+    try {
+        const { ano } = req.query;
+
+        // Subconsulta para o filtro de ano
+        let tempoSubquery = `SELECT id_tempo FROM dim_tempo WHERE data_completa IS NOT NULL`;
+        const params = [];
+        if (ano) {
+            tempoSubquery += ` AND ano = ?`;
+            params.push(ano);
+        } else {
+            tempoSubquery += ` AND ano IN (?, ?, ?)`;
+            params.push(...['2021', '2022', '2023']);
+        }
+        
+        // Query principal que calcula os clean sheets e outras métricas
+        let sql = `
+            SELECT
+                t.id_time,
+                t.nome,
+                t.logo_url_time,
+                SUM(CASE WHEN fp.id_mandante = t.id_time AND fp.gols_visitante = 0 THEN 1 ELSE 0 END) +
+                SUM(CASE WHEN fp.id_visitante = t.id_time AND fp.gols_mandante = 0 THEN 1 ELSE 0 END) AS clean_sheets,
+                SUM(CASE WHEN fp.id_mandante = t.id_time THEN fp.gols_visitante ELSE fp.gols_mandante END) AS gols_sofridos,
+                COUNT(fp.id_partida) AS total_jogos
+            FROM dim_time t
+            JOIN fato_partida fp ON t.id_time = fp.id_mandante OR t.id_time = fp.id_visitante
+            WHERE fp.id_tempo IN (${tempoSubquery})
+            GROUP BY t.id_time, t.nome, t.logo_url_time
+            ORDER BY clean_sheets DESC;
+        `;
+
+        const data = await executeQuery(sql, params);
+        // Calcula a média no final para evitar problemas no SQL
+        const finalData = data.map(d => ({
+            ...d,
+            media_gols_sofridos: d.total_jogos > 0 ? (d.gols_sofridos / d.total_jogos) : 0
+        }));
+
+        res.json(finalData);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 18: Detalhes defensivos de um time (gols sofridos em casa vs fora)
+app.get('/api/time-detalhes-defensivos', async (req, res) => {
+    try {
+        const { id_time, ano } = req.query;
+
+        if (!id_time) {
+            return res.status(400).json({ error: 'id_time é obrigatório' });
+        }
+
+        let tempoSubquery = `SELECT id_tempo FROM dim_tempo WHERE data_completa IS NOT NULL`;
+        const params = [id_time, id_time]; // id_time é usado duas vezes
+
+        if (ano) {
+            tempoSubquery += ` AND ano = ?`;
+            params.push(ano);
+        } else {
+            tempoSubquery += ` AND ano IN (?, ?, ?)`;
+            params.push(...['2021', '2022', '2023']);
+        }
+        
+        let sql = `
+            SELECT
+                T.nome,
+                T.logo_url_time,
+                SUM(CASE WHEN FP.id_mandante = T.id_time THEN FP.gols_visitante ELSE 0 END) as sofridos_mandante,
+                SUM(CASE WHEN FP.id_visitante = T.id_time THEN FP.gols_mandante ELSE 0 END) as sofridos_visitante
+            FROM dim_time T
+            LEFT JOIN fato_partida FP ON (T.id_time = FP.id_mandante OR T.id_time = FP.id_visitante)
+            WHERE T.id_time = ? AND FP.id_tempo IN (${tempoSubquery})
+            GROUP BY T.id_time, T.nome, T.logo_url_time;
+        `;
+
+        // A ordem dos params precisa ser (id_time para o WHERE, id_time do subquery se houver, ano do subquery)
+        const finalParams = [id_time, ...params.slice(2)];
+
+        const data = await executeQuery(sql, finalParams);
+        res.json(data[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 19: Desempenho de Pontos (Casa vs. Fora)
+app.get('/api/desempenho-casa-fora', async (req, res) => {
+    try {
+        const { ano } = req.query;
+
+        let tempoSubquery = `SELECT id_tempo FROM dim_tempo WHERE data_completa IS NOT NULL`;
+        const params = [];
+        if (ano) {
+            tempoSubquery += ` AND ano = ?`;
+            params.push(ano);
+        } else {
+            tempoSubquery += ` AND ano IN (?, ?, ?)`;
+            params.push(...['2021', '2022', '2023']);
+        }
+
+        // Usamos CTEs para calcular os pontos de mandante e visitante separadamente
+        let sql = `
+            WITH HomePoints AS (
+                SELECT 
+                    id_mandante as id_time,
+                    SUM(CASE WHEN id_vencedor = id_mandante THEN 3 WHEN id_vencedor = 0 OR id_vencedor IS NULL THEN 1 ELSE 0 END) as pontos_casa
+                FROM fato_partida
+                WHERE id_tempo IN (${tempoSubquery})
+                GROUP BY id_mandante
+            ),
+            AwayPoints AS (
+                SELECT 
+                    id_visitante as id_time,
+                    SUM(CASE WHEN id_vencedor = id_visitante THEN 3 WHEN id_vencedor = 0 OR id_vencedor IS NULL THEN 1 ELSE 0 END) as pontos_fora
+                FROM fato_partida
+                WHERE id_tempo IN (${tempoSubquery})
+                GROUP BY id_visitante
+            )
+            SELECT
+                T.id_time,
+                T.nome,
+                T.logo_url_time,
+                COALESCE(HP.pontos_casa, 0) AS pontos_casa,
+                COALESCE(AP.pontos_fora, 0) AS pontos_fora,
+                (COALESCE(HP.pontos_casa, 0) + COALESCE(AP.pontos_fora, 0)) as total_pontos
+            FROM dim_time T
+            LEFT JOIN HomePoints HP ON T.id_time = HP.id_time
+            LEFT JOIN AwayPoints AP ON T.id_time = AP.id_time
+            ORDER BY total_pontos DESC;
+        `;
+
+        const finalParams = [...params, ...params];
+        const data = await executeQuery(sql, finalParams);
+        res.json(data.filter(d => d.total_pontos > 0)); // Filtra times que não participaram
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 20: Detalhes de gols marcados (casa vs fora)
+app.get('/api/time-detalhes-gols', async (req, res) => {
+    try {
+        const { id_time, ano } = req.query;
+
+        if (!id_time) return res.status(400).json({ error: 'id_time é obrigatório' });
+
+        let tempoSubquery = `SELECT id_tempo FROM dim_tempo WHERE data_completa IS NOT NULL`;
+        const params = [id_time, id_time];
+
+        if (ano) {
+            tempoSubquery += ` AND ano = ?`;
+            params.push(ano);
+        } else {
+            tempoSubquery += ` AND ano IN (?, ?, ?)`;
+            params.push(...['2021', '2022', '2023']);
+        }
+        
+        let sql = `
+            SELECT
+                T.nome,
+                T.logo_url_time,
+                SUM(CASE WHEN FP.id_mandante = T.id_time THEN FP.gols_mandante ELSE 0 END) as marcados_casa,
+                SUM(CASE WHEN FP.id_visitante = T.id_time THEN FP.gols_visitante ELSE 0 END) as marcados_fora
+            FROM dim_time T
+            LEFT JOIN fato_partida FP ON (T.id_time = FP.id_mandante OR T.id_time = FP.id_visitante)
+            WHERE T.id_time = ? AND FP.id_tempo IN (${tempoSubquery})
+            GROUP BY T.id_time, T.nome, T.logo_url_time;
+        `;
+
+        const finalParams = [id_time, ...params.slice(2)];
+        const data = await executeQuery(sql, finalParams);
+        res.json(data[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Inicia o servidor
 app.listen(port, () => {
     console.log(`Servidor da API rodando em http://localhost:${port}`);

@@ -4,6 +4,8 @@ const API_BASE_URL = 'http://localhost:3000/api';
 function updateAllVisualizations() {
     hidePlayerDetails();
     hideTeamComparisonPanel();
+    hideTeamDefenseComparisonPanel();
+    hideTeamGoalsComparisonPanel();
 
     const faltasBtn = document.getElementById('heatmap-faltas-btn');
     const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
@@ -22,7 +24,9 @@ function updateAllVisualizations() {
     loadGoalkeeperAnalysis();
     loadChordDiagram();
     loadHeatmap();
-    loadConversionRateChart();   
+    loadConversionRateChart();
+    loadCleanSheetChart();
+    loadHomeAwayChart();   
 }
 
 // Atualiza todos os gráficos de jogadores com base nos filtros selecionados. 
@@ -272,6 +276,15 @@ function hideTeamComparisonPanel() {
     d3.select("#team-comparison-panel").style("display", "none");
 }
 
+/** Esconde o painel de comparação defensiva. */
+function hideTeamDefenseComparisonPanel() {
+    d3.select("#team-defense-comparison-panel").style("display", "none");
+}
+/** Esconde o painel de comparação de gols. */
+function hideTeamGoalsComparisonPanel() {
+    d3.select("#team-goals-comparison-panel").style("display", "none");
+}
+
 /**
  * Orquestra a exibição do painel de comparação.
  * @param {object} clickedTeamData - Os dados do time que foi clicado no gráfico de barras.
@@ -315,6 +328,213 @@ function showTeamComparisonPanel(clickedTeamData) {
     }
 }
 
+/** Função principal para carregar e desenhar o gráfico de Clean Sheets. */
+function loadCleanSheetChart() {
+    const selectElement = document.querySelector('#temporada-filter');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const selectedYear = selectedOption.value ? selectedOption.text : '';
+    const anoQueryParam = selectedYear ? `?ano=${selectedYear}` : '';
+    
+    const timeSelect = document.querySelector('#time-filter');
+    const selectedTeamName = timeSelect.value ? timeSelect.options[timeSelect.selectedIndex].text : null;
+
+    fetch(`${API_BASE_URL}/clean-sheets${anoQueryParam}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const container = d3.select("#clean-sheet-chart");
+                container.html("");
+                
+                const margin = { top: 20, right: 50, bottom: 50, left: 150 };
+                const width = 700 - margin.left - margin.right;
+                const height = 700 - margin.top - margin.bottom;
+
+                const svg = container.append("svg")
+                    .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+                  .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+                
+                const tooltip = d3.select('.tooltip');
+                
+                const xScale = d3.scaleLinear().domain([0, d3.max(data, d => +d.clean_sheets) * 1.1]).range([0, width]);
+                const yScale = d3.scaleBand().domain(data.map(d => d.nome).reverse()).range([height, 0]).padding(0.1);
+
+                svg.append("g").call(d3.axisLeft(yScale));
+                svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+
+                svg.selectAll(".barra")
+                    .data(data)
+                    .enter()
+                    .append("rect")
+                    .attr("class", "barra")
+                    .attr("y", d => yScale(d.nome))
+                    .attr("x", 0)
+                    .attr("height", yScale.bandwidth())
+                    .attr("width", 0) // Estado inicial para a animação
+                    .attr("fill", d => d.nome === selectedTeamName ? "#ff7f0e" : "#1f77b4")
+                    .style("cursor", "pointer")
+                    // 1. ANEXA OS EVENTOS PRIMEIRO
+                    .on("click", (event, d) => showTeamDefenseComparisonPanel(d))
+                    .on("mouseover", (event, d) => {
+                        tooltip.style("opacity", 1).html(`
+                            <strong>${d.nome}</strong><br/>
+                            Jogos s/ sofrer gols: ${d.clean_sheets}<br/>
+                            Gols Sofridos: ${d.gols_sofridos}<br/>
+                            Média Gols Sofridos: ${parseFloat(d.media_gols_sofridos).toFixed(2)}
+                        `);
+                        // Move o posicionamento para dentro do evento para garantir que a posição do mouse seja a mais recente
+                        tooltip.style("left", (event.pageX + 15) + "px")
+                               .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", () => tooltip.style("opacity", 0))
+                    // 2. SÓ DEPOIS INICIA A ANIMAÇÃO
+                    .transition()
+                    .duration(800)
+                    .attr("width", d => xScale(+d.clean_sheets));
+            } else {
+                d3.select("#clean-sheet-chart").html("<p>Nenhum dado encontrado.</p>");
+            }
+        });
+}
+/** Orquestra a exibição do painel de comparação defensiva. */
+function showTeamDefenseComparisonPanel(clickedTeamData) {
+    const panel = d3.select("#team-defense-comparison-panel");
+    const baseContainer = d3.select("#defense-detail-base");
+    const comparisonContainer = d3.select("#defense-detail-comparison");
+
+    const timeSelect = document.querySelector('#time-filter');
+    const selectedTeamId = timeSelect.value;
+    const selectElement = document.querySelector('#temporada-filter');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const selectedYear = selectedOption.value ? selectedOption.text : '';
+    const anoQueryParam = selectedYear ? `&ano=${selectedYear}` : '';
+
+    panel.style("display", "block");
+    baseContainer.html("Carregando...");
+    comparisonContainer.html("").style("display", "none");
+
+    if (selectedTeamId && selectedTeamId != clickedTeamData.id_time) {
+        comparisonContainer.style("display", "block");
+        Promise.all([
+            fetch(`${API_BASE_URL}/time-detalhes-defensivos?id_time=${selectedTeamId}${anoQueryParam}`),
+            fetch(`${API_BASE_URL}/time-detalhes-defensivos?id_time=${clickedTeamData.id_time}${anoQueryParam}`)
+        ])
+        .then(responses => Promise.all(responses.map(res => res.json())))
+        .then(([baseData, comparisonData]) => {
+            createDefenseDetailChart(baseData, "#defense-detail-base");
+            createDefenseDetailChart(comparisonData, "#defense-detail-comparison");
+        });
+    } else {
+        fetch(`${API_BASE_URL}/time-detalhes-defensivos?id_time=${clickedTeamData.id_time}${anoQueryParam}`)
+            .then(res => res.json())
+            .then(data => {
+                createDefenseDetailChart(data, "#defense-detail-base");
+            });
+    }
+}
+
+/** Função principal para carregar e desenhar o gráfico de barras agrupadas. */
+function loadHomeAwayChart() {
+    const selectElement = document.querySelector('#temporada-filter');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const selectedYear = selectedOption.value ? selectedOption.text : '';
+    const anoQueryParam = selectedYear ? `?ano=${selectedYear}` : '';
+    const timeSelect = document.querySelector('#time-filter');
+    const selectedTeamId = timeSelect.value;
+
+    fetch(`${API_BASE_URL}/desempenho-casa-fora${anoQueryParam}`)
+        .then(res => res.json())
+        .then(data => {
+            const container = d3.select("#home-away-chart");
+            container.html("");
+            if (!data || data.length === 0) {
+                container.html("<p>Nenhum dado encontrado.</p>");
+                return;
+            }
+
+            const margin = {top: 20, right: 30, bottom: 40, left: 150};
+            const width = 700 - margin.left - margin.right;
+            const height = 700 - margin.top - margin.bottom;
+
+            const svg = container.append("svg")
+                .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+              .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+            
+            const tooltip = d3.select('.tooltip');
+            const subgroups = ["pontos_casa", "pontos_fora"];
+            const groups = data.map(d => d.nome);
+
+            const yScale = d3.scaleBand().domain(groups).range([0, height]).padding([0.2]);
+            const xScale = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.pontos_casa, d.pontos_fora)) * 1.1]).range([0, width]);
+            const color = d3.scaleOrdinal().domain(subgroups).range(['#1f77b4','#ff7f0e']); // Azul para casa, Laranja para fora
+
+            svg.append("g").call(d3.axisLeft(yScale));
+            svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+
+            const ySubgroup = d3.scaleBand().domain(subgroups).range([0, yScale.bandwidth()]).padding([0.05]);
+
+            const bars = svg.append("g")
+              .selectAll("g")
+              .data(data)
+              .join("g")
+              .attr("transform", d => `translate(0, ${yScale(d.nome)})`);
+
+            bars.selectAll("rect")
+              .data(d => subgroups.map(key => ({key: key, value: d[key], teamData: d})))
+              .join("rect")
+              .attr("y", d => ySubgroup(d.key))
+              .attr("x", 0)
+              .attr("height", ySubgroup.bandwidth())
+              .attr("fill", d => color(d.key))
+              .style("cursor", "pointer")
+              .on("click", (event, d) => showTeamGoalsComparisonPanel(d.teamData))
+              .on("mouseover", (event, d) => {
+                  const label = d.key === 'pontos_casa' ? 'Casa' : 'Fora';
+                  tooltip.style("opacity", 1).html(`
+                      <strong>${d.teamData.nome} (${label})</strong><br/>
+                      Pontos: ${d.value}
+                  `).style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px");
+              })
+              .on("mouseout", () => tooltip.style("opacity", 0))
+              .transition().duration(800)
+              .attr("width", d => xScale(d.value));
+        });
+}
+
+/** Orquestra a exibição do painel de comparação de gols. */
+function showTeamGoalsComparisonPanel(clickedTeamData) {
+    const panel = d3.select("#team-goals-comparison-panel");
+    const baseContainer = d3.select("#goals-detail-base");
+    const comparisonContainer = d3.select("#goals-detail-comparison");
+    const timeSelect = document.querySelector('#time-filter');
+    const selectedTeamId = timeSelect.value;
+    const selectElement = document.querySelector('#temporada-filter');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const selectedYear = selectedOption.value ? selectedOption.text : '';
+    const anoQueryParam = selectedYear ? `&ano=${selectedYear}` : '';
+    panel.style("display", "block");
+    baseContainer.html("Carregando...");
+    comparisonContainer.html("").style("display", "none");
+
+    if (selectedTeamId && selectedTeamId != clickedTeamData.id_time) {
+        comparisonContainer.style("display", "block");
+        Promise.all([
+            fetch(`${API_BASE_URL}/time-detalhes-gols?id_time=${selectedTeamId}${anoQueryParam}`),
+            fetch(`${API_BASE_URL}/time-detalhes-gols?id_time=${clickedTeamData.id_time}${anoQueryParam}`)
+        ])
+        .then(responses => Promise.all(responses.map(res => res.json())))
+        .then(([baseData, comparisonData]) => {
+            createGoalsDetailChart(baseData, "#goals-detail-base");
+            createGoalsDetailChart(comparisonData, "#goals-detail-comparison");
+        });
+    } else {
+        fetch(`${API_BASE_URL}/time-detalhes-gols?id_time=${clickedTeamData.id_time}${anoQueryParam}`)
+            .then(res => res.json())
+            .then(data => {
+                createGoalsDetailChart(data, "#goals-detail-base");
+            });
+    }
+}
 
 // Função para criar Gráfico de Barras
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
@@ -1754,6 +1974,99 @@ function createPieChart(data, selector) {
         .style('font-size', '23px')
         .style('fill', 'white')
         .style('font-weight', 'bold');
+}
+
+/** Cria o gráfico de detalhes defensivos (gols sofridos em casa vs fora). */
+function createDefenseDetailChart(data, selector) {
+    const container = d3.select(selector);
+    container.html("");
+
+    const header = container.append("div").attr("class", "pie-header"); // Reutiliza a classe do pie header
+    header.append("img").attr("src", data.logo_url_time).attr("referrerpolicy", "no-referrer");
+    header.append("h4").text(data.nome);
+
+    const detailData = [
+        { label: 'Sofridos (Casa)', value: data.sofridos_mandante },
+        { label: 'Sofridos (Fora)', value: data.sofridos_visitante }
+    ];
+
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    const width = 250 - margin.left - margin.right;
+    const height = 250 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const tooltip = d3.select('.tooltip');    
+
+    const xScale = d3.scaleBand().domain(detailData.map(d => d.label)).range([0, width]).padding(0.4);
+    const yScale = d3.scaleLinear().domain([0, d3.max(detailData, d => d.value) * 1.1]).range([height, 0]);
+
+    svg.append("g").call(d3.axisLeft(yScale).ticks(5));
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+
+    svg.selectAll(".bar")
+        .data(detailData)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("x", d => xScale(d.label))
+        .attr("y", d => yScale(d.value))
+        .attr("width", xScale.bandwidth())
+        .attr("height", d => height - yScale(d.value))        
+        .on("mouseover", (event, d) => {
+            tooltip.style("opacity", 1)
+                   .html(`<strong>${d.label}</strong><br/>Gols Sofridos: <strong>${d.value}</strong>`)
+                   .style("left", (event.pageX + 15) + "px")
+                   .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", () => {
+            tooltip.style("opacity", 0);
+        });
+}
+
+/** Cria o gráfico de detalhes de gols (marcados em casa vs fora). */
+function createGoalsDetailChart(data, selector) {
+    // Esta função é muito parecida com a createDefenseDetailChart, adaptamos para gols marcados
+    const container = d3.select(selector);
+    container.html("");
+    const header = container.append("div").attr("class", "pie-header");
+    header.append("img").attr("src", data.logo_url_time).attr("referrerpolicy", "no-referrer");
+    header.append("h4").text(data.nome);
+    const detailData = [
+        { label: 'Marcados (Casa)', value: data.marcados_casa },
+        { label: 'Marcados (Fora)', value: data.marcados_fora }
+    ];
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    const width = 250 - margin.left - margin.right;
+    const height = 250 - margin.top - margin.bottom;
+
+    const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const tooltip = d3.select('.tooltip');   
+      
+    const xScale = d3.scaleBand().domain(detailData.map(d => d.label)).range([0, width]).padding(0.4);
+    const yScale = d3.scaleLinear().domain([0, d3.max(detailData, d => d.value) * 1.1 || 10]).range([height, 0]);
+
+    svg.append("g").call(d3.axisLeft(yScale).ticks(5));
+    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+
+    svg.selectAll(".bar").data(detailData).enter().append("rect").attr("class", "bar")
+        .attr("x", d => xScale(d.label)).attr("y", d => yScale(d.value))
+        .attr("width", xScale.bandwidth()).attr("height", d => height - yScale(d.value))        
+        .on("mouseover", (event, d) => {
+            tooltip.style("opacity", 1)
+                   .html(`<strong>${d.label}</strong><br/>Gols Marcados: <strong>${d.value}</strong>`)
+                   .style("left", (event.pageX + 15) + "px")
+                   .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", () => {
+            tooltip.style("opacity", 0);
+        });
 }
 
 // ----- INICIALIZAÇÃO DA PÁGINA -----
