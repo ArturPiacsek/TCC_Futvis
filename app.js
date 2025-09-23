@@ -2082,19 +2082,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // O evento do filtro de temporada deve atualizar tudo, exceto os gráficos de jogadores
     document.querySelector('#temporada-filter').addEventListener('change', updateAllVisualizations); 
     
-    const tabButtons = document.querySelectorAll(".tab-button");
+     const tabButtons = document.querySelectorAll(".tab-button");
     const tabPanes = document.querySelectorAll(".tab-pane");
 
     tabButtons.forEach(button => {
         button.addEventListener("click", () => {
-            // 1. Remove a classe 'active' de todos os botões e painéis
-            tabButtons.forEach(btn => btn.classList.remove("active"));
-            tabPanes.forEach(pane => pane.classList.remove("active"));
+            // APRIMORAMENTO: Esconde todos os painéis de detalhe ao trocar de aba
+            hidePlayerDetails();
+            hideTeamComparisonPanel();
+            hideTeamDefenseComparisonPanel();
+            hideTeamGoalsComparisonPanel();
 
-            // 2. Adiciona a classe 'active' ao botão clicado
+            // Lógica original para trocar a aba ativa
+            const targetContainer = button.closest('.large-chart-container');
+            
+            // Remove 'active' apenas dos botões e painéis dentro do mesmo container
+            targetContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            targetContainer.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
             button.classList.add("active");
-
-            // 3. Adiciona a classe 'active' ao painel correspondente
             const targetPaneId = button.getAttribute("data-target");
             const targetPane = document.querySelector(targetPaneId);
             if (targetPane) {

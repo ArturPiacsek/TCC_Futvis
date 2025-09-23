@@ -102,36 +102,43 @@
             <div id="stacked-area-chart"></div>
         </div>
         <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <h2>Eficiência Ofensiva: Taxa de Conversão de Chutes (%)</h2>
-            <div id="conversion-rate-chart"></div> 
+            <div class="tabs-nav">
+                <button class="tab-button active" data-target="#performance-tab">Desempenho (Casa/Fora)</button>
+                <button class="tab-button" data-target="#conversion-rate-tab">Eficiência Ofensiva</button>
+                <button class="tab-button" data-target="#clean-sheets-tab">Jogos Sem Sofrer Gol</button>                
+            </div>
+
+            <div class="tabs-content">
+                <div id="performance-tab" class="tab-pane active">
+                    <div id="home-away-chart"></div> </div>
+                <div id="clean-sheets-tab" class="tab-pane">
+                    <div id="clean-sheet-chart"></div> </div>
+                <div id="conversion-rate-tab" class="tab-pane">
+                    <div id="conversion-rate-chart"></div> </div>
+            </div>
             <div id="team-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                <h3>Chances Criadas</h3>
                 <div style="display: flex; justify-content: space-around; gap: 20px;">
                     <div id="pie-chart-base" class="chart-container"></div>
                     <div id="pie-chart-comparison" class="chart-container"></div>
                 </div>
-            </div>          
-        </div>
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Ranking de Jogos Sem Sofrer Gols</h2>
-            <div id="clean-sheet-chart"></div>
-                <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
-                    <h3>Gols Sofridos Dentro e Fora de Casa</h2>
-                    <div style="display: flex; justify-content: space-around; gap: 20px;">
-                        <div id="defense-detail-base" class="chart-container"></div>
-                        <div id="defense-detail-comparison" class="chart-container"></div>
-                    </div>
+            </div>
+            <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                <h3>Gols Sofridos Dentro e Fora de Casa</h3>
+                <div style="display: flex; justify-content: space-around; gap: 20px;">
+                    <div id="defense-detail-base" class="chart-container"></div>
+                    <div id="defense-detail-comparison" class="chart-container"></div>
                 </div>
-        </div>
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <h2>Desempenho por Pontos (Casa vs. Fora)</h2>
-            <div id="home-away-chart"></div>
-                <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
-                    <div style="display: flex; justify-content: space-around; gap: 20px;">
-                        <div id="goals-detail-base" class="chart-container"></div>
-                        <div id="goals-detail-comparison" class="chart-container"></div>
-                    </div>
+            </div>
+            <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                <h3>Gols Marcados Dentro e Fora de Casa</h3>
+                <div style="display: flex; justify-content: space-around; gap: 20px;">
+                    <div id="goals-detail-base" class="chart-container"></div>
+                    <div id="goals-detail-comparison" class="chart-container"></div>
                 </div>
-        </div>        
+            </div>
+
+        </div>                  
         
         <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <div class='heatmap'>
