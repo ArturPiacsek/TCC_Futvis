@@ -5,25 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Futvis</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto+Condensed&display=swap" rel="stylesheet">
 </head>
 <body>
 
+    <button id="toggle-sidebar">☰ Filtros</button>
+
+    <aside class="sidebar-filtros" id="sidebar">
+        <h3>Filtros</h3>
+        <label for="time-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Time:</label>
+        <select id="time-filter">
+            <option value="">-- Todos os Times --</option>
+        </select>
+
+        <label for="temporada-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Temporada:</label>
+        <select id="temporada-filter">
+            <option value="">-- Todos os Anos (Acumulado) --</option>
+        </select>
+    </aside>
+
+    <nav class="navbar"> <!--Cria menu de navegação na parte superior da tela-->
+        <ul>
+            <li><a href="#artilheiros-chart">Artilheiros</a></li>
+            <li><a href="#assistencias-chart">Assistências</a></li>
+            <li><a href="#participacoes-chart">Gols</a></li>
+            <li><a href="#tabela-campeonato-table">Tabela</a></li>
+            <li><a href="#bubble-map-chart">Nacionalidades</a></li>
+        </ul>
+    </nav>
+
     <h1>Dashboard de Análise de Times ⚽</h1>
-        
-     <div class="filtro-geral-container">
-        <div>
-            <label for="time-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Time:</label>
-            <select id="time-filter">
-                <option value="">-- Todos os Times --</option>
-                </select>
-        </div>
-        <div>
-            <label for="temporada-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Temporada:</label>
-            <select id="temporada-filter">
-                <option value="">-- Todos os Anos (Acumulado) --</option>
-                </select>
-        </div>
-    </div>
 
     <div class="kpi-grid">
     <div class="kpi-card" id="kpi-passes">
@@ -45,7 +56,7 @@
 
 
     <div class="grid-container">
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <div class="tabs-nav">
                 <button class="tab-button active" data-target="#artilheiros-tab">Artilheiros</button>
                 <button class="tab-button" data-target="#assistencias-tab">Assistências</button>
@@ -66,8 +77,8 @@
                 <div id="goleiros-scatter-tab" class="tab-pane">
                     </div>
             </div>
-        </div>
-        <div id="player-details-panel" class="chart-container" style="grid-column: 1 / -1; display: none; position: relative;">
+        </section>
+        <section id="player-details-panel" class="chart-container" style="grid-column: 1 / -1; display: none; position: relative;">
             <span id="details-close-btn" style="position: absolute; top: 15px; right: 20px; font-size: 24px; font-weight: bold; cursor: pointer;">&times;</span>
             
             <div style="display: flex; gap: 30px; align-items: center; width: 100%;">
@@ -86,22 +97,22 @@
                     </div>
 
             </div>
-        </div>              
-        <div class="chart-container" style="grid-column: 1 / -1;">
+        </section>              
+        <section class="chart-container" style="grid-column: 1 / -1;">
             <h2>Distribuição de Eficiência (Minutos por Gol)</h2>
             <div id="histogram-chart"></div>
             <div id="histogram-details"></div>
-        </div>
+        </section>
         
-        <div class="chart-container" style="grid-column: 1 / -1;">
+        <section class="chart-container" style="grid-column: 1 / -1;">
             <h2>Média de Gols Entre Temporadas</h2>
             <div id="multi-line-chart"></div>
-        </div>
-        <div class="chart-container" style="grid-column: 1 / -1;">
+        </section>
+        <section class="chart-container" style="grid-column: 1 / -1;">
             <h2>Composição dos Resultados (Vitórias, Derrotas e Empates)</h2>
             <div id="stacked-area-chart"></div>
-        </div>
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+        </section>
+        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <div class="tabs-nav">
                 <button class="tab-button active" data-target="#performance-tab">Desempenho (Casa/Fora)</button>
                 <button class="tab-button" data-target="#conversion-rate-tab">Eficiência Ofensiva</button>
@@ -138,9 +149,9 @@
                 </div>
             </div>
 
-        </div>                  
+        </section>                  
         
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <div class='heatmap'>
                 <h2>Heatmap de Disciplina</h2>
                 <div class="heatmap-toggle">
@@ -149,27 +160,61 @@
                 </div>
             </div>
             <div id="heatmap-chart"></div>
-        </div>        
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+        </section>        
+        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <h2>Fluxo de Vitórias Entre Times</h2>
             <div id="chord-diagram-chart" style="display: flex; justify-content: center; align-items: center; height: 100%;">                   
             </div>                
-        </div>        
-        <div class="chart-container" style="grid-column: 1 / -1;">
+        </section>        
+        <section class="chart-container" style="grid-column: 1 / -1;">
             <h2>Análise de Estilo de Jogo (Posse vs Gols)</h2>
             <div id="scatter-plot-chart"></div>
-        </div>       
-        <div class="chart-container" style="grid-column: 1 / -1;">
+        </section>       
+        <section class="chart-container" style="grid-column: 1 / -1;">
             <h2>Distribuição de Jogadores por Nacionalidade</h2>
             <div id="bubble-map-chart"></div>
-        </div>        
-        <div class="chart-container" style="grid-column: 1 / -1;"> 
+        </section>        
+        <section class="chart-container" style="grid-column: 1 / -1;"> 
             <h2>Tabela do Campeonato</h2>            
             <div id="tabela-campeonato-table"></div>
-        </div>
+        </section>
     </div>
 
-    
+    <footer class="footer">
+
+        <div class="div-footer">
+            <div class="div-footer-1">
+                <div class="div-footer-1-coluna">
+                    <span><b>LOGO</b></span>
+                    <p>Endereço</p>
+                </div>
+            </div>
+
+            <div class="div-footer-2">
+                <div class="div-footer-2-coluna">
+                    <span><b>Contato</b></span>
+                    <p>contato@na.na</p>
+                </div>
+            </div>
+
+            <div class="div-footer-3">
+                <div class="div-footer-3-coluna">
+                    <span><b>Links</b></span>
+                    <p><a href="https://www.ic.uff.br/">Instituto de Computação</a></p>
+                    <p><a href="https://www.uff.br/">Universidade Federal Fluminense</a></p>
+                    <p><a href="https://www.cbf.com.br/">CBF</a></p>
+                </div>
+            </div>
+
+            <div class="div-footer-4">
+                <div class="div-footer-4-coluna">
+                    <span><b>Outros</b></span>
+                    <p>Políticas de Privacidade</p>
+                </div>
+            </div>
+        </div>
+        <p class="footer-direitos">Universidade Federal Fluminense &copy; 2025 - Todos os Direitos Reservados.</p>
+    </footer>
 
     <div class="tooltip"></div>
     <script src="https://unpkg.com/topojson@3"></script>
