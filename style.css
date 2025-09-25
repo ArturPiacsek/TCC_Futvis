@@ -224,3 +224,49 @@
         .pie-header h4 {
             margin: 5px 0 0 0;
         }
+
+        .player-carousel-container {
+            position: relative;
+            padding: 0 40px; /* Espaço para as setas de navegação */
+        }
+        .player-card {
+            text-align: center;
+            padding: 10px;
+        }
+        .player-card-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #eee;
+            object-fit: cover;
+            margin: 0 auto;
+        }
+        .player-card-name {
+            font-weight: bold;
+            margin-top: 8px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .player-card-team-logo {
+            width: 25px;
+            height: 25px;
+            margin-top: 4px;
+        }                
+        .tns-nav {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .tns-nav button {
+            width: 10px;
+            height: 10px;
+            padding: 0;
+            margin: 0 5px;
+            border-radius: 50%;
+            background: #ccc;
+            border: 0;
+        }
+        .tns-nav button.tns-nav-active {
+            background: #007bff;
+        }

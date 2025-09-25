@@ -104,6 +104,7 @@ app.get('/api/artilheiros', async (req, res) => {
         // Adiciona o final da query
         sql += `
             GROUP BY j.id_jogador, j.nome_jogador, t.logo_url_time
+            HAVING SUM(f.gols) > 0 
             ORDER BY total DESC
             LIMIT 20;
         `;
@@ -155,6 +156,7 @@ app.get('/api/assistencias', async (req, res) => {
         }
         sql += `
             GROUP BY j.id_jogador, j.nome_jogador, t.logo_url_time
+            HAVING SUM(f.assistencias) > 0 
             ORDER BY total DESC
             LIMIT 20;
         `;
@@ -308,6 +310,7 @@ app.get('/api/participacoes-gol', async (req, res) => {
 
         sql += `
             GROUP BY j.id_jogador, j.nome_jogador, t.logo_url_time
+            HAVING SUM(f.participacoes_em_gol) > 0 
             ORDER BY total DESC
             LIMIT 20;
         `;
@@ -1082,6 +1085,52 @@ app.get('/api/time-detalhes-gols', async (req, res) => {
         const finalParams = [id_time, ...params.slice(2)];
         const data = await executeQuery(sql, finalParams);
         res.json(data[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota 21: Lista de nomes de jogadores por nacionalidade
+app.get('/api/lista-jogadores-nacionalidade', async (req, res) => {
+    try {
+        const { nacionalidade, id_time, id_tempo } = req.query;
+
+        if (!nacionalidade) {
+            return res.status(400).json({ error: 'Parâmetro "nacionalidade" é obrigatório.' });
+        }
+
+        let sql = `
+            SELECT
+                j.nome_jogador,
+                j.logo_url_jogador,
+                t.logo_url_time,
+                GROUP_CONCAT(DISTINCT dt.ano ORDER BY dt.ano SEPARATOR ', ') as anos
+            FROM dim_jogador j
+            JOIN fato_jogador_geral f ON j.id_jogador = f.id_jogador
+            JOIN dim_time t ON f.id_clube = t.id_time
+            JOIN dim_tempo dt ON f.id_tempo = dt.id_tempo
+        `;
+        
+        const params = [nacionalidade];
+        const whereClauses = [`j.nacionalidade = ?`];
+
+        if (id_time) {
+            whereClauses.push(`f.id_clube = ?`);
+            params.push(id_time);
+        }
+        if (id_tempo) {
+            whereClauses.push(`f.id_tempo = ?`);
+            params.push(id_tempo);
+        } else {
+            whereClauses.push(`f.id_tempo IN (?, ?, ?)`);
+            params.push(...[1, 276, 549]);
+        }
+
+        sql += ` WHERE ${whereClauses.join(' AND ')}`;
+        sql += ` GROUP BY j.id_jogador, j.nome_jogador, j.logo_url_jogador, t.logo_url_time ORDER BY j.nome_jogador;`;
+
+        const data = await executeQuery(sql, params);
+        res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

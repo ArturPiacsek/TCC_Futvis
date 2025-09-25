@@ -6,6 +6,7 @@ function updateAllVisualizations() {
     hideTeamComparisonPanel();
     hideTeamDefenseComparisonPanel();
     hideTeamGoalsComparisonPanel();
+    hideNationalityDetails();
 
     const faltasBtn = document.getElementById('heatmap-faltas-btn');
     const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
@@ -125,6 +126,34 @@ function loadScatterPlot() {
             createScatterPlot(data);
         })
         .catch(error => console.error('Erro ao carregar dados do scatter plot:', error));
+}
+
+ // ----- Função para carregar os dados do mapa -----
+    function loadBubbleMap() {
+    // Lê ambos os filtros
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+
+    // Constrói a query string dinamicamente
+    const queryParams = [];
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+    const worldAtlasURL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+
+    Promise.all([
+        d3.json(`${API_BASE_URL}/jogadores-por-nacionalidade${queryString}`),
+        d3.json(worldAtlasURL)
+    ])
+    .then(([playerData, worldData]) => {
+        if (playerData && playerData.length > 0) {
+            createBubbleMap(playerData, worldData);
+        } else {
+            d3.select("#bubble-map-chart").html("<p>Nenhum dado de nacionalidade encontrado para esta combinação de filtros.</p>");
+        }
+    })
+    .catch(error => console.error('Erro ao carregar dados para o mapa:', error));
 }
 
 // ----- FUNÇÕES GENÉRICAS -----
@@ -285,6 +314,11 @@ function hideTeamGoalsComparisonPanel() {
     d3.select("#team-goals-comparison-panel").style("display", "none");
 }
 
+/** Esconde o painel de detalhes de nacionalidade. */
+function hideNationalityDetails() {
+    d3.select("#nationality-details-panel").style("display", "none");
+}
+
 /**
  * Orquestra a exibição do painel de comparação.
  * @param {object} clickedTeamData - Os dados do time que foi clicado no gráfico de barras.
@@ -361,6 +395,18 @@ function loadCleanSheetChart() {
 
                 svg.append("g").call(d3.axisLeft(yScale));
                 svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+
+                svg.selectAll(".bar-label")
+                    .data(data)
+                    .enter()
+                    .append("text")
+                    .attr("class", "bar-label")
+                    .attr("y", d => yScale(d.nome) + yScale.bandwidth() / 2 + 4)
+                    .attr("x", d => xScale(+d.clean_sheets) + 10)
+                    .text(d => `${parseInt(d.clean_sheets).toFixed(0)}`)
+                    .style("font-size", "12px")
+                    .style("font-weight", "bold")
+                    .style("fill", "#333");
 
                 svg.selectAll(".barra")
                     .data(data)
@@ -479,6 +525,8 @@ function loadHomeAwayChart() {
               .join("g")
               .attr("transform", d => `translate(0, ${yScale(d.nome)})`);
 
+             bars.style("opacity", d => (selectedTeamId && d.id_time != selectedTeamId) ? 0.5 : 1.0);  
+
             bars.selectAll("rect")
               .data(d => subgroups.map(key => ({key: key, value: d[key], teamData: d})))
               .join("rect")
@@ -536,6 +584,122 @@ function showTeamGoalsComparisonPanel(clickedTeamData) {
     }
 }
 
+/**
+ * Busca e exibe a lista de jogadores em um carrossel.
+ * @param {string} nationality - O nome da nacionalidade clicada.
+ */
+function showNationalityDetails(nationality) {
+    const panel = d3.select("#nationality-details-panel");
+    const listContainer = d3.select("#nationality-details-list");
+    const title = d3.select("#nationality-details-title");
+    const tooltip = d3.select('.tooltip');
+
+    panel.style("display", "block");
+    title.text(`Carregando jogadores de ${nationality}...`);
+    // Limpamos o container para garantir que instâncias antigas do carrossel sejam removidas
+    listContainer.html("");
+
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+    const queryParams = [`nacionalidade=${encodeURIComponent(nationality)}`];
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
+    const queryString = `?${queryParams.join('&')}`;
+
+    fetch(`${API_BASE_URL}/lista-jogadores-nacionalidade${queryString}`)
+        .then(res => res.json())
+        .then(players => {
+            title.text(`Jogadores de ${nationality} (${players.length})`);
+            
+            if (players && players.length > 0) {
+                // 1. Cria o container que o Tiny Slider usará
+                const carouselContainer = listContainer.append("div")
+                    .attr("class", "player-carousel-container")
+                    .append("div")
+                    .attr("class", "player-carousel"); // O seletor para o slider
+
+                // 2. Popula o carrossel com os "cards" dos jogadores
+                players.forEach(player => {
+                    const card = carouselContainer.append("div").attr("class", "player-card");
+                    
+                    card.append("img")
+                        .attr("class", "player-card-photo")
+                        .attr("src", player.logo_url_jogador || 'placeholder.png') // Adiciona uma imagem padrão se a foto for nula
+                        .attr("referrerpolicy", "no-referrer");
+
+                    card.append("div")
+                        .attr("class", "player-card-name")
+                        .text(player.nome_jogador);
+                        
+                    card.append("img")
+                        .attr("class", "player-card-team-logo")
+                        .attr("src", player.logo_url_time)
+                        .attr("referrerpolicy", "no-referrer")
+                        .on("mouseover", (event) => {
+                            tooltip.style("opacity", 1).html(`
+                                <strong>${player.nome_jogador}</strong><br/>
+                                Ano(s): ${player.anos}
+                            `)
+                            .style("left", (event.pageX + 15) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                        })
+                        .on("mouseout", () => {
+                            tooltip.style("opacity", 0);
+                        });                
+                });                
+
+                // 3. INICIA O CARROSSEL após o HTML ser criado
+                tns({
+                    container: '.player-carousel',
+                    items: 3, // Quantos itens mostrar por vez
+                    slideBy: 'page',
+                    autoplay: false,                    
+                    controls: false, // Esconde as setas "prev/next"
+                    nav: true, // Mostra os pontinhos de navegação
+                    responsive: { // Deixa responsivo para diferentes tamanhos de tela
+                        640: {
+                            items: 4
+                        },
+                        900: {
+                            items: 6
+                        }
+                    }
+                });
+
+            } else {
+                listContainer.html("<p>Nenhum jogador encontrado para esta seleção.</p>");
+            }
+            panel.node().scrollIntoView({ behavior: 'smooth', block: 'center' });
+        })
+        .catch(error => {
+            title.text(`Erro ao carregar jogadores`);
+            console.error('Erro:', error);
+        });
+}
+
+/**
+ * Abrevia um nome completo. 
+ * @param {string} nomeCompleto - O nome completo do jogador.
+ * @returns {string} O nome abreviado.
+ */
+function abreviaNome(nomeCompleto) {
+    if (!nomeCompleto || typeof nomeCompleto !== 'string') return '';
+    
+    const parts = nomeCompleto.trim().split(' ');
+
+    // Se o nome tem apenas uma ou duas partes, retorna como está.
+    if (parts.length <= 2) {
+        return nomeCompleto;
+    }
+
+    // Pega o primeiro e o último nome do array
+    const nome = parts[0];
+    const sobrenome = parts[parts.length - 1];
+
+    // Retorna a combinação dos dois
+    return `${nome} ${sobrenome}`;
+}
+
 // Função para criar Gráfico de Barras
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
     const container = d3.select(selector);
@@ -570,23 +734,19 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
         .range([0, width])
         .padding(0.2);
 
-    // Desenha os eixos
+    //Cria o eixo X
+    const xAxis = d3.axisBottom(xScale)        
+        .tickFormat(name => abreviaNome(name));    
     svg.append("g")
         .attr("transform", `translate(0, ${height})`)
-        .call(d3.axisBottom(xScale))
+        .call(xAxis)
         .selectAll("text")
-        .attr("transform", "translate(-10,0)rotate(-45)")
+        .attr("transform", "translate(-10,0)rotate(-60)")
         .style("text-anchor", "end");
-
-    /* Eixo X (sem os textos)
-    svg.append("g")
-        .attr("transform", `translate(0, ${height})`)
-        .call(d3.axisBottom(xScale))
-        .selectAll(".tick text")
-        .remove();  */
 
     svg.append("g").call(d3.axisLeft(yScale).ticks(5));
 
+    //Nome do eixo Y
      svg.append("text")
         .attr("transform", "rotate(-90)") // Rotaciona o texto para ficar vertical
         .attr("y", 0 - margin.left) // Posiciona à esquerda do eixo Y
@@ -697,7 +857,7 @@ function displayHistogramPlayerList(binData, binRange) {
                 <img src="${player.logo_url_time}" class="player-list-logo" referrerpolicy="no-referrer">
                 <div class="player-list-info">
                     <strong>${player.nome_jogador} (${player.minutos_por_gol} min/gol)</strong>
-                    <span>Gols: ${player.total_gols} | Minutos: ${player.total_minutos}</span>
+                    <span>Gols: ${player.total_gols} | Minutos Jogados: ${player.total_minutos}</span>
                 </div>
             `);
     });
@@ -960,24 +1120,35 @@ function createStackedAreaChart(data) {
 }
 
 function updateKpis() {
+    const kpiContainer = document.getElementById('kpi-container');
     const selectedTeamId = document.querySelector('#time-filter').value;
-    const selectedTempoId = document.querySelector('#temporada-filter').value;
 
-    const queryParams = [];
-    // Nota: O backend assume 2023 se nenhum id_tempo for passado para o comparativo
-    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
-    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
-    
-    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+    // Verifica se um time específico foi selecionado no filtro
+    if (selectedTeamId) {
+        // Se sim, mostra o container de KPIs e busca os dados
+        kpiContainer.style.display = 'grid';
 
-    fetch(`${API_BASE_URL}/kpis${queryString}`)
-        .then(res => res.json())
-        .then(data => {
-            updateKpiCard('#kpi-passes', data.passes, '%', true); // higher is better
-            updateKpiCard('#kpi-defesas', data.defesas, '', true); // higher is better
-            updateKpiCard('#kpi-posse', data.posse, '%', true); // higher is better
-        })
-        .catch(error => console.error('Erro ao carregar KPIs:', error));
+        const selectedTempoId = document.querySelector('#temporada-filter').value;
+        const queryParams = [];
+        queryParams.push(`id_time=${selectedTeamId}`); // Garante que o id_time sempre será enviado
+        if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
+        const queryString = `?${queryParams.join('&')}`;
+
+        fetch(`${API_BASE_URL}/kpis${queryString}`)
+            .then(res => res.json())
+            .then(data => {
+                updateKpiCard('#kpi-passes', data.passes, '%', true);
+                updateKpiCard('#kpi-defesas', data.defesas, '', true);
+                updateKpiCard('#kpi-posse', data.posse, '%', true);
+            })
+            .catch(error => {
+                console.error('Erro ao carregar KPIs:', error);
+                kpiContainer.style.display = 'none'; // Esconde se der erro
+            });
+    } else {
+        // Se "Todos os Times" estiver selecionado, simplesmente esconde o container
+        kpiContainer.style.display = 'none';
+    }
 }
 
 /**
@@ -1074,6 +1245,7 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
             .style("stroke", "#fff")
             .style("stroke-width", 0.5)
             // Adiciona a interatividade de mouseover
+            .style("cursor", "pointer")
             .on("mouseover", function(event, d) {
                 d3.select(this).style("fill-opacity", 1);
                 tooltip.style("opacity", 1)
@@ -1084,7 +1256,11 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
             .on("mouseout", function() {
                 d3.select(this).style("fill-opacity", 0.7);
                 tooltip.style("opacity", 0);
-            });
+            })
+            .on("click", (event, d) => {
+            // Chama a função para mostrar a lista de jogadores daquele país
+            showNationalityDetails(d.properties.name);
+        });
     }
 
     function createStackedBarChart(data, selector,  yAxisLabel) {    
@@ -1131,23 +1307,19 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
         .domain([0, d3.max(data, d => +d.amarelos + +d.vermelhos) * 1.1])
         .range([height, 0]);
 
-    // 4. Desenhar os eixos
+    // 4. Desenhar os eixos   
+    const xAxis = d3.axisBottom(xScale)        
+        .tickFormat(name => abreviaNome(name));    
     svg.append("g")
         .attr("transform", `translate(0, ${height})`)
-        .call(d3.axisBottom(xScale))
+        .call(xAxis) // Usa o eixo que acabamos de criar
         .selectAll("text")
-        .attr("transform", "translate(-10,0)rotate(-45)")
+        .attr("transform", "translate(-10,0)rotate(-60)")
         .style("text-anchor", "end");
         
-    svg.append("g").call(d3.axisLeft(yScale).ticks(5)); 
+    svg.append("g").call(d3.axisLeft(yScale).ticks(5));     
 
-    /* Eixo X (sem os textos)
-    svg.append("g")
-        .attr("transform", `translate(0, ${height})`)
-        .call(d3.axisBottom(xScale))
-        .selectAll(".tick text")
-        .remove();*/
-
+    //Nome do eixo Y    
     svg.append("text")
         .attr("transform", "rotate(-90)") // Rotaciona o texto para ficar vertical
         .attr("y", 0 - margin.left) // Posiciona à esquerda do eixo Y
@@ -1311,36 +1483,7 @@ function createGoalkeeperScatterPlot(data, selector) {
             .style("top", (event.pageY - 28) + "px");
         })
         .on("mouseout", () => tooltip.style("opacity", 0));
-}
-
-
-    // ----- Função para carregar os dados do mapa -----
-    function loadBubbleMap() {
-    // Lê ambos os filtros
-    const selectedTeamId = document.querySelector('#time-filter').value;
-    const selectedTempoId = document.querySelector('#temporada-filter').value;
-
-    // Constrói a query string dinamicamente
-    const queryParams = [];
-    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
-    if (selectedTempoId) queryParams.push(`id_tempo=${selectedTempoId}`);
-    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-
-    const worldAtlasURL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
-
-    Promise.all([
-        d3.json(`${API_BASE_URL}/jogadores-por-nacionalidade${queryString}`),
-        d3.json(worldAtlasURL)
-    ])
-    .then(([playerData, worldData]) => {
-        if (playerData && playerData.length > 0) {
-            createBubbleMap(playerData, worldData);
-        } else {
-            d3.select("#bubble-map-chart").html("<p>Nenhum dado de nacionalidade encontrado para esta combinação de filtros.</p>");
-        }
-    })
-    .catch(error => console.error('Erro ao carregar dados para o mapa:', error));
-}
+}   
 
 /**
  * Cria o gráfico de dispersão interativo.
@@ -1386,8 +1529,19 @@ function createScatterPlot(data) {
     svg.append("g").call(d3.axisLeft(yScale));
 
     // Labels dos eixos
-    svg.append("text").attr("x", width / 2).attr("y", height + 45).text("Média de Posse de Bola (%)").style("text-anchor", "middle").style("font-weight", "bold");
-    svg.append("text").attr("transform", "rotate(-90)").attr("y", -45).attr("x", -height / 2).text("Total de Gols Marcados").style("text-anchor", "middle").style("font-weight", "bold");
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", height + 45)
+        .text("Média de Posse de Bola (%)")
+        .style("text-anchor", "middle")
+        .style("font-weight", "bold");
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -45)
+        .attr("x", -height / 2)
+        .text("Total de Gols Marcados")
+        .style("text-anchor", "middle")
+        .style("font-weight", "bold");
 
     // 3. Desenhar os pontos (usando as logos dos times)
     svg.append("g")
@@ -1400,8 +1554,7 @@ function createScatterPlot(data) {
         .attr("width", d => sizeScale(+d.total_chutes_no_gol))
         .attr("height", d => sizeScale(+d.total_chutes_no_gol))
         .attr("href", d => d.logo_url_time)
-        .attr("referrerpolicy", "no-referrer")
-        .style("cursor", "pointer")
+        .attr("referrerpolicy", "no-referrer")        
         .on("mouseover", function(event, d) {
             tooltip.style("opacity", 1);
             tooltip.html(`
@@ -1871,6 +2024,7 @@ function createHorizontalBarChart(data, highlightedTeam) {
         .attr("x", d => xScale(+d.taxa_conversao) + 20)
         .text(d => `${parseFloat(d.taxa_conversao).toFixed(1)}%`)
         .style("font-size", "12px")
+        .style("font-weight", "bold")
         .style("fill", "#333");
         
     // Adiciona mouseover para mostrar detalhes
