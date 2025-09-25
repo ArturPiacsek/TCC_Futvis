@@ -2223,9 +2223,28 @@ function createGoalsDetailChart(data, selector) {
         });
 }
 
+// Função que fixa o navbar na parte superior da tela
+function initStickyNavbar() {
+    const navbar = document.querySelector('.navbar');
+    const trigger = document.querySelector('h1');
+
+    if (!navbar || !trigger) return;
+
+    window.addEventListener('scroll', function () {
+        const triggerOffset = trigger.offsetTop + trigger.offsetHeight;
+
+        if (window.scrollY > triggerOffset) {
+            navbar.classList.add('sticky');
+        } else {
+            navbar.classList.remove('sticky');
+        }
+    });
+}
+
 // ----- INICIALIZAÇÃO DA PÁGINA -----
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
+    initStickyNavbar(); // Carrega o navbar
     updateAllVisualizations(); // Esta função agora carrega TUDO
 
     document.getElementById('details-close-btn').addEventListener('click', hidePlayerDetails);
@@ -2236,7 +2255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // O evento do filtro de temporada deve atualizar tudo, exceto os gráficos de jogadores
     document.querySelector('#temporada-filter').addEventListener('change', updateAllVisualizations); 
     
-     const tabButtons = document.querySelectorAll(".tab-button");
+    const tabButtons = document.querySelectorAll(".tab-button");
     const tabPanes = document.querySelectorAll(".tab-pane");
 
     tabButtons.forEach(button => {
@@ -2261,5 +2280,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetPane.classList.add("active");
             }
         });
+    });
+
+    // Menu lateral colapsável dos filtros
+    const toggleBtn = document.getElementById('toggle-sidebar').addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('active');
+    });
+    const sidebar = document.getElementById('sidebar');
+
+    toggleBtn.addEventListener('click', () => {
+        const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+        if (isDesktop) {
+            sidebar.classList.toggle('collapsed'); // recolhe ou mostra fixo no desktop
+        } else {
+            sidebar.classList.toggle('active'); // mostra ou esconde sidebar sobreposta aos gráficos em telas menores
+        }
     });
 });
