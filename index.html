@@ -58,7 +58,86 @@
 
 
     <div class="grid-container">
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+                                
+        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+            <div class="tabs-nav">
+                <button class="tab-button active" data-target="#performance-tab">Desempenho (Casa/Fora)</button>
+                <button class="tab-button" data-target="#conversion-rate-tab">Eficiência Ofensiva</button>
+                <button class="tab-button" data-target="#clean-sheets-tab">Jogos Sem Sofrer Gol</button>                
+            </div>
+
+            <div class="tabs-content">
+                <div id="performance-tab" class="tab-pane active">
+                    <div id="home-away-chart"></div> </div>
+                <div id="clean-sheets-tab" class="tab-pane">
+                    <div id="clean-sheet-chart"></div> </div>
+                <div id="conversion-rate-tab" class="tab-pane">
+                    <div id="conversion-rate-chart"></div> </div>
+            </div>
+            <div id="team-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                <h3>Chances Criadas</h3>
+                <div style="display: flex; justify-content: space-around; gap: 20px;">
+                    <div id="pie-chart-base" class="chart-container"></div>
+                    <div id="pie-chart-comparison" class="chart-container"></div>
+                </div>
+            </div>
+            <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                <h3>Gols Sofridos Dentro e Fora de Casa</h3>
+                <div style="display: flex; justify-content: space-around; gap: 20px;">
+                    <div id="defense-detail-base" class="chart-container"></div>
+                    <div id="defense-detail-comparison" class="chart-container"></div>
+                </div>
+            </div>
+            <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                <h3>Gols Marcados Dentro e Fora de Casa</h3>
+                <div style="display: flex; justify-content: space-around; gap: 20px;">
+                    <div id="goals-detail-base" class="chart-container"></div>
+                    <div id="goals-detail-comparison" class="chart-container"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="chart-container" style="grid-column: 1 / -1;">
+            <h2>Média de Gols Entre Temporadas</h2>
+            <div id="multi-line-chart"></div>
+        </section>                             
+        
+        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+            <div class='heatmap'>
+                <h2>Heatmap de Disciplina</h2>
+                <div class="heatmap-toggle">
+                    <button id="heatmap-faltas-btn" class="active">Faltas</button>
+                    <button id="heatmap-cartoes-btn">Cartões</button>
+                </div>
+            </div>
+            <div id="heatmap-chart"></div>
+        </section>
+        
+        <div class="chart-container" style="grid-column: 1 / -1;">
+            <h2>Análise de Estilo de Jogo (Posse vs Gols)</h2>
+            <div id="scatter-plot-chart"></div>
+        </div>
+
+        <section class="chart-container" style="grid-column: 1 / -1;">
+            <h2>Composição dos Resultados (Vitórias, Derrotas e Empates)</h2>
+            <div id="stacked-area-chart"></div>
+        </section>        
+               
+        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+            <h2>Fluxo de Vitórias Entre Times</h2>
+            <div id="chord-diagram-chart" style="display: flex; justify-content: center; align-items: center; height: 100%;">                   
+            </div>                
+        </section>    
+         
+        <section class="chart-container" style="grid-column: 1 / -1;">
+            <h2>Distribuição de Jogadores por Nacionalidade</h2>
+            <div id="bubble-map-chart"></div>
+            <div id="nationality-details-panel" class="chart-container" style="display: none; grid-column: 1 / -1;">
+                <h3 id="nationality-details-title">Jogadores</h3>
+                <div id="nationality-details-list"></div>                
+            </div>
+        </section>    
+
         <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <div class="tabs-nav">
                 <button class="tab-button active" data-target="#artilheiros-tab">Artilheiros</button>
@@ -100,158 +179,14 @@
                     </div>
 
             </div>
-        </section>              
+        </section>
+
         <section class="chart-container" style="grid-column: 1 / -1;">
             <h2>Distribuição de Eficiência (Minutos por Gol)</h2>
             <div id="histogram-chart"></div>
             <div id="histogram-details"></div>
-        </section>
-        
-        <section class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Média de Gols Entre Temporadas</h2>
-            <div id="multi-line-chart"></div>
-        </section>
-        <section class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Composição dos Resultados (Vitórias, Derrotas e Empates)</h2>
-            <div id="stacked-area-chart"></div>
-        </section>
-        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <div class="tabs-nav">
-                <button class="tab-button active" data-target="#performance-tab">Desempenho (Casa/Fora)</button>
-                <button class="tab-button" data-target="#conversion-rate-tab">Eficiência Ofensiva</button>
-                <button class="tab-button" data-target="#clean-sheets-tab">Jogos Sem Sofrer Gol</button>                
-            </div>
-
-            <div class="tabs-content">
-                <div id="performance-tab" class="tab-pane active">
-                    <div id="home-away-chart"></div> </div>
-                <div id="clean-sheets-tab" class="tab-pane">
-                    <div id="clean-sheet-chart"></div> </div>
-                <div id="conversion-rate-tab" class="tab-pane">
-                    <div id="conversion-rate-chart"></div> </div>
-            </div>
-            <div id="team-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
-                <h3>Chances Criadas</h3>
-                <div style="display: flex; justify-content: space-around; gap: 20px;">
-                    <div id="pie-chart-base" class="chart-container"></div>
-                    <div id="pie-chart-comparison" class="chart-container"></div>
-                </div>
-            </div>
-            <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
-                <h3>Gols Sofridos Dentro e Fora de Casa</h3>
-                <div style="display: flex; justify-content: space-around; gap: 20px;">
-                    <div id="defense-detail-base" class="chart-container"></div>
-                    <div id="defense-detail-comparison" class="chart-container"></div>
-                </div>
-            </div>
-            <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
-                <h3>Gols Marcados Dentro e Fora de Casa</h3>
-                <div style="display: flex; justify-content: space-around; gap: 20px;">
-                    <div id="goals-detail-base" class="chart-container"></div>
-                    <div id="goals-detail-comparison" class="chart-container"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Média de Gols Entre Temporadas</h2>
-            <div id="multi-line-chart"></div>
-        </div>
-
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-        </section>                  
-        
-        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <div class='heatmap'>
-                <h2>Heatmap de Disciplina</h2>
-                <div class="heatmap-toggle">
-                    <button id="heatmap-faltas-btn" class="active">Faltas</button>
-                    <button id="heatmap-cartoes-btn">Cartões</button>
-                </div>
-            </div>
-            <div id="heatmap-chart"></div>
-        </div>
-        
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Análise de Estilo de Jogo (Posse vs Gols)</h2>
-            <div id="scatter-plot-chart"></div>
-        </div>
-
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Composição dos Resultados (Vitórias, Derrotas e Empates)</h2>
-            <div id="stacked-area-chart"></div>
-        </div>
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-        </section>        
-        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <h2>Fluxo de Vitórias Entre Times</h2>
-            <div id="chord-diagram-chart" style="display: flex; justify-content: center; align-items: center; height: 100%;">                   
-            </div>                
-        </div>
-        
-        <div class="chart-container" style="grid-column: 1 / -1;">
-        </section>        
-        <section class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Análise de Estilo de Jogo (Posse vs Gols)</h2>
-            <div id="scatter-plot-chart"></div>
-        </section>       
-        <section class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Distribuição de Jogadores por Nacionalidade</h2>
-            <div id="bubble-map-chart"></div>
-            <div id="nationality-details-panel" class="chart-container" style="display: none; grid-column: 1 / -1;">
-                <h3 id="nationality-details-title">Jogadores</h3>
-                <div id="nationality-details-list"></div>                
-            </div>
-        </div>    
-
-        <div class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <div class="tabs-nav">
-                <button class="tab-button active" data-target="#artilheiros-tab">Artilheiros</button>
-                <button class="tab-button" data-target="#assistencias-tab">Assistências</button>
-                <button class="tab-button" data-target="#participacoes-tab">Participações em Gol</button>
-                <button class="tab-button" data-target="#disciplina-tab">Cartões</button>
-                <button class="tab-button" data-target="#goleiros-scatter-tab">Goleiros (Volume vs Eficiência)</button>
-            </div>
-
-            <div class="tabs-content">
-                <div id="artilheiros-tab" class="tab-pane active">
-                    </div>
-                <div id="assistencias-tab" class="tab-pane">
-                    </div>
-                <div id="participacoes-tab" class="tab-pane">
-                    </div>
-                <div id="disciplina-tab" class="tab-pane">
-                    </div>
-                <div id="goleiros-scatter-tab" class="tab-pane">
-                    </div>
-            </div>
-        </div>
-        <div id="player-details-panel" class="chart-container" style="grid-column: 1 / -1; display: none; position: relative;">
-            <span id="details-close-btn" style="position: absolute; top: 15px; right: 20px; font-size: 24px; font-weight: bold; cursor: pointer;">&times;</span>
-            
-            <div style="display: flex; gap: 30px; align-items: center; width: 100%;">
-                
-                <div style="text-align: center; flex-basis: 200px; flex-shrink: 0;">
-                    <img id="player-photo-details" style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid #eee;" src="" alt="Foto do Jogador">
-                    <h2 id="player-name-details" style="margin-top: 10px; margin-bottom: 5px; font-size: 1.2em;">Nome do Jogador</h2>
-                    <img id="team-logo-details" style="width: 40px; height: 40px;" src="" alt="Logo do Time">
-                </div>
-                
-                <div style="flex-grow: 1;">
-                    <div id="radar-chart-details"></div>
-                </div>
-
-                <div id="radar-stats-list" style="flex-basis: 250px; flex-shrink: 0;"></div>                    
-            </div>
-        </div>                      
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Distribuição de Eficiência (Minutos por Gol)</h2>
-            <div id="histogram-chart"></div>
-            <div id="histogram-details"></div>
-        </div>  
-                        
-        <div class="chart-container" style="grid-column: 1 / -1;"> 
-        </section>        
+        </section>   
+               
         <section class="chart-container" style="grid-column: 1 / -1;"> 
             <h2>Tabela do Campeonato</h2>            
             <div id="tabela-campeonato-table"></div>
