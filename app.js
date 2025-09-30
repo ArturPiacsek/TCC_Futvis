@@ -72,7 +72,6 @@ function fetchTabelaCampeonato() {
 
 
 //Popula os menus de filtro buscando os dados da API.
-
 function populateFilters() {
     // Popula filtro de times
     fetch(`${API_BASE_URL}/times`)
@@ -84,7 +83,7 @@ function populateFilters() {
             });
         });
 
-    // Popula filtro de temporadas (agora só com os 3 valores válidos)
+    // Popula filtro de temporadas
     fetch(`${API_BASE_URL}/temporadas`)
         .then(res => res.json())
         .then(temporadas => {
@@ -379,9 +378,9 @@ function loadCleanSheetChart() {
                 const container = d3.select("#clean-sheet-chart");
                 container.html("");
                 
-                const margin = { top: 20, right: 50, bottom: 50, left: 150 };
+                const margin = { top: 20, right: 50, bottom: 80, left: 150 };
                 const width = 700 - margin.left - margin.right;
-                const height = 700 - margin.top - margin.bottom;
+                const height = 600 - margin.top - margin.bottom;
 
                 const svg = container.append("svg")
                     .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
@@ -395,6 +394,8 @@ function loadCleanSheetChart() {
 
                 svg.append("g").call(d3.axisLeft(yScale));
                 svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
+
+                svg.append("text").attr("x", width / 2).attr("y", height + 40).text("Número de Jogos").style("text-anchor", "middle");
 
                 svg.selectAll(".bar-label")
                     .data(data)
@@ -418,8 +419,7 @@ function loadCleanSheetChart() {
                     .attr("height", yScale.bandwidth())
                     .attr("width", 0) // Estado inicial para a animação
                     .attr("fill", d => d.nome === selectedTeamName ? "#ff7f0e" : "#1f77b4")
-                    .style("cursor", "pointer")
-                    // 1. ANEXA OS EVENTOS PRIMEIRO
+                    .style("cursor", "pointer")                    
                     .on("click", (event, d) => showTeamDefenseComparisonPanel(d))
                     .on("mouseover", (event, d) => {
                         tooltip.style("opacity", 1).html(`
@@ -427,13 +427,11 @@ function loadCleanSheetChart() {
                             Jogos s/ sofrer gols: ${d.clean_sheets}<br/>
                             Gols Sofridos: ${d.gols_sofridos}<br/>
                             Média Gols Sofridos: ${parseFloat(d.media_gols_sofridos).toFixed(2)}
-                        `);
-                        // Move o posicionamento para dentro do evento para garantir que a posição do mouse seja a mais recente
+                        `);                        
                         tooltip.style("left", (event.pageX + 15) + "px")
                                .style("top", (event.pageY - 28) + "px");
                     })
-                    .on("mouseout", () => tooltip.style("opacity", 0))
-                    // 2. SÓ DEPOIS INICIA A ANIMAÇÃO
+                    .on("mouseout", () => tooltip.style("opacity", 0))                    
                     .transition()
                     .duration(800)
                     .attr("width", d => xScale(+d.clean_sheets));
@@ -479,7 +477,7 @@ function showTeamDefenseComparisonPanel(clickedTeamData) {
     }
 }
 
-/** Função principal para carregar e desenhar o gráfico de barras agrupadas. */
+// Função principal para carregar e desenhar o gráfico de barras agrupadas. 
 function loadHomeAwayChart() {
     const selectElement = document.querySelector('#temporada-filter');
     const selectedOption = selectElement.options[selectElement.selectedIndex];
@@ -498,9 +496,9 @@ function loadHomeAwayChart() {
                 return;
             }
 
-            const margin = {top: 20, right: 30, bottom: 40, left: 150};
+            const margin = {top: 20, right: 100, bottom: 80, left: 150};
             const width = 700 - margin.left - margin.right;
-            const height = 700 - margin.top - margin.bottom;
+            const height = 600 - margin.top - margin.bottom;
 
             const svg = container.append("svg")
                 .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
@@ -518,6 +516,8 @@ function loadHomeAwayChart() {
             svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
 
             const ySubgroup = d3.scaleBand().domain(subgroups).range([0, yScale.bandwidth()]).padding([0.05]);
+
+            svg.append("text").attr("x", width / 2).attr("y", height + 40).text("Pontos Obtidos").style("text-anchor", "middle");
 
             const bars = svg.append("g")
               .selectAll("g")
@@ -546,6 +546,27 @@ function loadHomeAwayChart() {
               .on("mouseout", () => tooltip.style("opacity", 0))
               .transition().duration(800)
               .attr("width", d => xScale(d.value));
+
+            const legend = svg.append("g")
+                .attr("transform", `translate(${width + 30}, 0)`); // Posição da legenda (canto superior direito)
+
+            const legendItems = legend.selectAll(".legend-item")
+                .data(subgroups)
+                .enter()
+                .append("g")
+                .attr("class", "legend-item")
+                .attr("transform", (d, i) => `translate(0, ${i * 20})`); // Espaçamento vertical
+
+            legendItems.append("rect")
+                .attr("width", 15)
+                .attr("height", 15)
+                .attr("fill", d => color(d));
+
+            legendItems.append("text")
+                .attr("x", 20)
+                .attr("y", 12)
+                .text(d => d === 'pontos_casa' ? 'Casa' : 'Fora')
+                .style("font-size", "14px");
         });
 }
 
@@ -612,13 +633,13 @@ function showNationalityDetails(nationality) {
             title.text(`Jogadores de ${nationality} (${players.length})`);
             
             if (players && players.length > 0) {
-                // 1. Cria o container que o Tiny Slider usará
+                // Cria o container que o Tiny Slider usará
                 const carouselContainer = listContainer.append("div")
                     .attr("class", "player-carousel-container")
                     .append("div")
                     .attr("class", "player-carousel"); // O seletor para o slider
 
-                // 2. Popula o carrossel com os "cards" dos jogadores
+                // Popula o carrossel com os "cards" dos jogadores
                 players.forEach(player => {
                     const card = carouselContainer.append("div").attr("class", "player-card");
                     
@@ -648,7 +669,7 @@ function showNationalityDetails(nationality) {
                         });                
                 });                
 
-                // 3. INICIA O CARROSSEL após o HTML ser criado
+                //INICIA O CARROSSEL após o HTML ser criado
                 tns({
                     container: '.player-carousel',
                     items: 3, // Quantos itens mostrar por vez
@@ -773,10 +794,8 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
             showPlayerDetails(d); // 'd' contém id_jogador, nome, etc.
         })
         
-        // 2. MELHORIA: ADICIONANDO EVENTOS DE MOUSE (TOOLTIP)
-        .on('mouseover', function(event, d) {
-            // Aumenta a opacidade da barra para dar feedback
-            d3.select(this).style('opacity', 0.7);
+        //EVENTOS DE MOUSE (TOOLTIP)
+        .on('mouseover', function(event, d) {       
 
             // Torna o tooltip visível
             tooltip.style('opacity', 1);
@@ -970,7 +989,7 @@ function loadHistogram() {
 
 function createMultiLineChart(data) {
     const isTeamSpecific = data.length > 0 && data[0].hasOwnProperty('pct_vitorias');
-    const yAxisLabel = isTeamSpecific ? "Média de Gols Marcados" : "Média de Gols por Jogo (Liga)";
+    const yAxisLabel = isTeamSpecific ? "Média de Gols Marcados" : "Média de Gols por Jogo";
 
     const selector = "#multi-line-chart";
     const container = d3.select(selector);
@@ -1961,7 +1980,7 @@ function createHeatmap(data, metric) {
 }
 
 /**
- * Cria um gráfico de barras horizontais (VERSÃO COM DESTAQUE).
+ * Cria um gráfico de barras horizontais.
  * @param {Array} data - Os dados a serem plotados.
  * @param {string|null} highlightedTeam - O nome do time a ser destacado.
  */
@@ -1970,9 +1989,9 @@ function createHorizontalBarChart(data, highlightedTeam) {
     const container = d3.select(selector);
     container.html("");
 
-    const margin = { top: 20, right: 50, bottom: 50, left: 150 };
+    const margin = { top: 20, right: 50, bottom: 80, left: 150 };
     const width = 700 - margin.left - margin.right;
-    const height = 700 - margin.top - margin.bottom;
+    const height = 600 - margin.top - margin.bottom;
 
     const svg = container.append("svg")
         .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
@@ -2128,7 +2147,33 @@ function createPieChart(data, selector) {
         .style('font-size', '23px')
         .style('fill', 'white')
         .style('font-weight', 'bold');
+
+         const legendContainer = container.append("div")
+        .style("display", "flex")
+        .style("justify-content", "center")
+        .style("margin-top", "10px");
+
+    const legendItems = legendContainer.selectAll(".legend-item")
+        .data(color.domain()) // Pega os nomes
+        .enter()
+        .append("div")
+        .style("display", "flex")
+        .style("align-items", "center")
+        .style("margin", "0 10px"); // Espaçamento entre os itens
+
+    // Adiciona o quadrado de cor
+    legendItems.append("div")
+        .style("width", "12px")
+        .style("height", "12px")
+        .style("background-color", d => color(d)); // Usa a mesma escala de cor
+
+    // Adiciona o texto da legenda
+    legendItems.append("span")
+        .style("margin-left", "5px")
+        .style("font-size", "12px")
+        .text(d => d);
 }
+
 
 /** Cria o gráfico de detalhes defensivos (gols sofridos em casa vs fora). */
 function createDefenseDetailChart(data, selector) {

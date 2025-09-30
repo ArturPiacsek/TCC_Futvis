@@ -13,8 +13,8 @@
         h2 { color: #555; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
         h3 {text-align: center; color: #333;}
         svg { width: 100%; height: auto; }
-        .bar { fill: #007bff; }
-        .bar:hover { fill: #0056b3; }
+        .bar { fill: #1f77b4; }
+        .bar:hover { fill: #ff7f0e; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-family: "Roboto Condensed", sans-serif;}
         th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }
         th { background-color: #f4f4f4; }
