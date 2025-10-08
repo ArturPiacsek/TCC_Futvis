@@ -26,7 +26,8 @@
         .error-message { color: #d9534f; font-weight: bold; }
         .team-logo {
             width: 36px;       
-            height: 36px;      
+            height: 36px; 
+            object-fit: contain;     
             vertical-align: middle; 
             margin-right: 8px;
         }
@@ -251,6 +252,7 @@
         .player-card-team-logo {
             width: 25px;
             height: 25px;
+            object-fit: contain;
             margin-top: 4px;
         }                
         .tns-nav {

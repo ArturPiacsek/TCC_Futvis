@@ -453,6 +453,9 @@ function loadCleanSheetChart() {
                     .on("click", (event, d) => showTeamDefenseComparisonPanel(d))
                     .on("mouseover", (event, d) => {
                         tooltip.style("opacity", 1).html(`
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <img src="${d.logo_url_time}" style="width: 25px;" referrerpolicy="no-referrer">
+                            <div>
                             <strong>${d.nome}</strong><br/>
                             Jogos s/ sofrer gols: ${d.clean_sheets}<br/>
                             Gols Sofridos: ${d.gols_sofridos}<br/>
@@ -569,6 +572,9 @@ function loadHomeAwayChart() {
               .on("mouseover", (event, d) => {
                   const label = d.key === 'pontos_casa' ? 'Casa' : 'Fora';
                   tooltip.style("opacity", 1).html(`
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <img src="${d.teamData.logo_url_time}" style="width: 25px;" referrerpolicy="no-referrer">
+                        <div>
                       <strong>${d.teamData.nome} (${label})</strong><br/>
                       Pontos: ${d.value}
                   `).style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px");
@@ -833,7 +839,7 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
             // Define o conteúdo e a posição do tooltip
             tooltip.html(`
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <img src="${d.logo_url_time}" style="width: 25px; height: 25px;" referrerpolicy="no-referrer">
+                    <img src="${d.logo_url_time}" style="width: 25px;" referrerpolicy="no-referrer">
                     <div>
                         <strong>${d[xKey]}</strong><br>
                         ${yAxisLabel}: <strong>${d[yKey]}</strong>
@@ -903,7 +909,7 @@ function displayHistogramPlayerList(binData, binRange) {
         list.append("li")
             .attr("class", "player-list-item")
             .html(`
-                <img src="${player.logo_url_time}" class="player-list-logo" referrerpolicy="no-referrer">
+                <img src="${player.logo_url_time}" class="team-logo" referrerpolicy="no-referrer">
                 <div class="player-list-info">
                     <strong>${player.nome_jogador} (${player.minutos_por_gol} min/gol)</strong>
                     <span>Gols: ${player.total_gols} | Minutos Jogados: ${player.total_minutos}</span>
@@ -1406,7 +1412,7 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
             const jogadorData = d.data;
             tooltip.html(`
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <img src="${jogadorData.logo_url_time}" style="width: 25px; height: 25px;" referrerpolicy="no-referrer">
+                    <img src="${jogadorData.logo_url_time}" style="width: 25px;" referrerpolicy="no-referrer">
                     <div>
                         <strong>${jogadorData.nome_jogador}</strong><br/>
                         <span style="color:${colors.amarelos};">●</span> Amarelos: ${jogadorData.amarelos}<br/>
@@ -1464,7 +1470,7 @@ function createGoalkeeperBarChart(data) {
         .on("mouseover", (event, d) => {
             tooltip.style("opacity", 1).html(`
                 <div style="display: flex; align-items: center;">
-                    <img src="${d.logo_url_time}" style="width: 25px; height: 25px; margin-right: 8px;" referrerpolicy="no-referrer">
+                    <img src="${d.logo_url_time}" style="width: 25px; margin-right: 8px;" referrerpolicy="no-referrer">
                     <div>
                         <strong>${d.nome_jogador}</strong><br/>
                         % Defesas: ${parseFloat(d.pct_defesas).toFixed(2)}%<br/>
@@ -1520,7 +1526,7 @@ function createGoalkeeperScatterPlot(data, selector) {
         .on("mouseover", (event, d) => {
             tooltip.style("opacity", 1).html(`
                  <div style="display: flex; align-items: center;">
-                    <img src="${d.logo_url_time}" style="width: 25px; height: 25px; margin-right: 8px;" referrerpolicy="no-referrer">
+                    <img src="${d.logo_url_time}" style="width: 25px; margin-right: 8px;" referrerpolicy="no-referrer">
                     <div>
                         <strong>${d.nome_jogador}</strong><br/>
                         % Defesas: ${parseFloat(d.pct_defesas).toFixed(2)}%<br/>
@@ -1702,7 +1708,7 @@ function createRadarChart(playerData, selector) {
        .style("fill", "#1f77b4").style("fill-opacity", 0.7);
 }
 
-/** Popula a lista de estatísticas ao lado do Radar Chart (VERSÃO FINAL CORRIGIDA). */
+/** Popula a lista de estatísticas ao lado do Radar Chart */
 function displayRadarStatsList(playerData) {
     const container = d3.select("#radar-stats-list");
     container.html("");
@@ -2081,7 +2087,7 @@ function createHorizontalBarChart(data, highlightedTeam) {
         .on("mouseover", (event, d) => {
             tooltip.style("opacity", 1).html(`
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <img src="${d.logo_url_time}" style="width: 25px; height: 25px;" referrerpolicy="no-referrer">
+                    <img src="${d.logo_url_time}" style="width: 25px;" referrerpolicy="no-referrer">
                     <div>
                         <strong>${d.nome}</strong><br/>
                         Taxa de Conversão: ${parseFloat(d.taxa_conversao).toFixed(2)}%<br/>
