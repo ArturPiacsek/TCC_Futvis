@@ -1,4 +1,9 @@
         :root {
+            --cor-fundo: #f0f2f5;
+            --cor-texto: #222;
+            --cor-card: white;
+            --cor-titulo: #333;
+            --cor-destaque: var(--azul); /* Será diferente dependendo do time que está selecionado no filtro */
             --cinza-escuro: #1c1c1c;
             --cinza: #2e2e2e;
             --branco-suave: #f5f5f5;
@@ -6,11 +11,11 @@
             --azul: #00bfff;
         }
         
-        body { font-family: "Montserrat", "Segoe UI", Roboto, sans-serif; margin: auto; max-width: 1000px; padding: 20px; background-color: #f0f2f5; }
+        body { font-family: "Montserrat", "Segoe UI", Roboto, sans-serif; margin: auto; max-width: 1000px; padding: 20px; background-color: var(--cor-fundo); }
         .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; }
-        .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }        
-        h1 { text-align: center; color: #333; font-size: 2em; margin-bottom: 40px;}
-        h2 { color: #555; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+        .chart-container { background: var(--cor-card); padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }        
+        h1 { text-align: center; color: var(--cor-titulo); font-size: 2em; margin-bottom: 40px;}
+        h2 { color: var(--cor-titulo); border-bottom: 2px solid var(--cor-destaque); padding-bottom: 5px; }
         h3 {text-align: center; color: #333;}
         svg { width: 100%; height: auto; }
         .bar { fill: #1f77b4; }
@@ -56,21 +61,22 @@
             margin-bottom: 20px;
         }
         .kpi-card {
-            background: white;
+            background: var(--cor-card);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             text-align: center;
+            border-top: 4px solid var(--cor-destaque)
         }
         .kpi-card h3 {
             margin-top: 0;
             font-size: 16px;
-            color: #555;
+            color: var(--cor-card);
         }
         .kpi-value {
             font-size: 36px;
             font-weight: bold;
-            color: #333;
+            color: var(--cor-destaque);
             margin: 10px 0;
         }
         .kpi-comparison {
@@ -85,7 +91,7 @@
          #histogram-details {
         margin-top: 15px;
         padding: 10px;
-        background-color: #f8f9fa;
+        background-color: var(--cor-card);
         border-radius: 5px;
         }
         #histogram-details h4 {
@@ -174,8 +180,8 @@
         }
         .tab-button.active {
             font-weight: bold;
-            color: #007bff;
-            border-bottom: 2px solid #007bff;
+            color: var(--cor-destaque);
+            border-bottom: 2px solid var(--cor-destaque);
         }
 
         /* Esconde todos os painéis de conteúdo por padrão */
@@ -200,9 +206,9 @@
             cursor: pointer;
         }
         .heatmap-toggle button.active {
-            background-color: #1f77b4;
+            background-color: var(--cor-destaque);
             color: white;
-            border-color: #1f77b4;
+            border-color: var(--cor-destaque);
         }         
         .pie-header {
             display: flex;
@@ -266,7 +272,7 @@
 
         /* Menu de Navegação */
         .navbar {
-            background-color: #002776;
+            background-color: var(--cor-destaque);
             padding: 10px 20px;
             font-family: "Montserrat", sans-serif;
         }
@@ -279,13 +285,13 @@
             padding: 0;
         }
         .navbar a {
-            color: #ffd700;
+            color: white;
             text-decoration: none;
             font-weight: bold;
             transition: color 0.3;
         }
         .navbar a:hover {
-            color: white;
+            color: #CCCCCC;
         }
         .navbar-sticky {
             position: fixed;
@@ -303,11 +309,11 @@
             bottom: 0;
             left: 0;
             width: 220px;
-            background-color: #007bff;
+            background-color: var(--cor-destaque);
             padding: 20px;
             box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
             font-weight: bold;
-            color: #222;
+            color: white;
             z-index: 1000;
             transition: transform 0.3s ease;
             transform: translateX(-100%);
@@ -318,7 +324,7 @@
         .sidebar-filtros h3 {
             margin-top: 0;
             font-size: 1.2em;
-            color: #007bff;
+            color: var(--cor-destaque);
         }
         .sidebar-filtros label {
             display: block;
@@ -339,8 +345,8 @@
             top: 20px;
             left: 20px;
             z-index: 1100;
-            background-color: gold;
-            color: #222;
+            background-color: black;
+            color: white;
             border: none;
             padding: 10px 16px;
             font-size: 16px;
@@ -352,12 +358,13 @@
 
         /* Rodapé */
         .footer {
-            background-color: #1f77b4;
+            background-color: var(--cor-destaque);
             color: white;
             height: auto;
             width: 100%;
             font-size: 14px;
             font-family: helvetica;
+            margin-top: 40px;
         }
         .footer a {
             text-decoration: none;
@@ -389,4 +396,13 @@
             padding: 10px;
             margin: 0px;
             text-align: center;
+        }
+
+        /* Modo escuro em desenvolvimento*/
+        body.dark-mode {
+            --cor-fundo: #121212;
+            --cor-texto: #e0e0e0;
+            --cor-card: #1e1e1e;
+            --cor-titulo: #f5f5f5;
+            --cor-destaque: var(--azul);
         }

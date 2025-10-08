@@ -1,5 +1,34 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
+const coresTimes = {
+    '1': '#006CB5',  // Bahia
+    '2': '#E5050F',  // Internacional
+    '3': '#BC8422',  // Botafogo - Cor de apoio institucional
+    '4': '#006437',  // Palmeiras
+    '5': '#CC001A',  // Sport
+    '6': '#870A28',  // Fluminense
+    '7': '#007F4E',  // América MG
+    '8': '#FE0000',  // São Paulo
+    '9': '#C52613',  // Flamengo
+    '10': '#C69F0F',  // Santos - Cor da coroa em homenagem ao Pelé
+    '11': '#4D2E6F',  // Ceará - Roxo por conta da campanha "Roxo pelo Vozão"
+    '12': '#0D80BF',  // Grêmio
+    '13': '#CC2031',  // Corinthians
+    '14': '#0E8E3A',  // Chapecoense
+    '15': '#E2231A',  // Vasco
+    '16': '#CE181E',  // Athletico Paranaense
+    '17': '#2F529E',  // Cruzeiro
+    '18': '#DC1212',  // Atletico GO
+    '19': '#00679A',  // Avaí
+    '20': '#00544D',  // Coritiba
+    '21': '#00491E',  // Goiás
+    '22': '#009035',  // Juventude
+    '23': '#006CB5',  // Fortaleza
+    '24': '#D2003C',  // Bragantino
+    '25': '#FFD503',  // Atlético MG
+    '26': '#FFD200',  // Cuiabá
+}
+
 //Função que é chamada QUANDO QUALQUER FILTRO MUDA. 
 function updateAllVisualizations() {
     hidePlayerDetails();
@@ -27,7 +56,8 @@ function updateAllVisualizations() {
     loadHeatmap();
     loadConversionRateChart();
     loadCleanSheetChart();
-    loadHomeAwayChart();   
+    loadHomeAwayChart();
+    updateHighlightColor();   
 }
 
 // Atualiza todos os gráficos de jogadores com base nos filtros selecionados. 
@@ -2284,6 +2314,13 @@ function initStickyNavbar() {
             navbar.classList.remove('sticky');
         }
     });
+}
+
+// Função que atualiza a cor de destaque com base no time que está filtrado
+function updateHighlightColor() {
+    const selectedTeamId = document.querySelector('#time-filter').value;
+    const color = coresTimes[selectedTeamId]  || '#00bfff'
+    document.documentElement.style.setProperty('--cor-destaque', color);
 }
 
 // ----- INICIALIZAÇÃO DA PÁGINA -----
