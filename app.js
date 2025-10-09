@@ -1,32 +1,32 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
 const coresTimes = {
-    '1': '#006CB5',  // Bahia
-    '2': '#E5050F',  // Internacional
-    '3': '#BC8422',  // Botafogo - Cor de apoio institucional
-    '4': '#006437',  // Palmeiras
-    '5': '#CC001A',  // Sport
-    '6': '#870A28',  // Fluminense
-    '7': '#007F4E',  // América MG
-    '8': '#FE0000',  // São Paulo
-    '9': '#C52613',  // Flamengo
-    '10': '#C69F0F',  // Santos - Cor da coroa em homenagem ao Pelé
-    '11': '#4D2E6F',  // Ceará - Roxo por conta da campanha "Roxo pelo Vozão"
-    '12': '#0D80BF',  // Grêmio
-    '13': '#CC2031',  // Corinthians
-    '14': '#0E8E3A',  // Chapecoense
-    '15': '#E2231A',  // Vasco
-    '16': '#CE181E',  // Athletico Paranaense
-    '17': '#2F529E',  // Cruzeiro
-    '18': '#DC1212',  // Atletico GO
-    '19': '#00679A',  // Avaí
-    '20': '#00544D',  // Coritiba
-    '21': '#00491E',  // Goiás
-    '22': '#009035',  // Juventude
-    '23': '#006CB5',  // Fortaleza
-    '24': '#D2003C',  // Bragantino
-    '25': '#FFD503',  // Atlético MG
-    '26': '#FFD200',  // Cuiabá
+    '1': { primary: '#006CB5', secondary: '#ED3237' },  // Bahia
+    '2': { primary: '#E5050F', secondary: '#DCDCDC' },  // Internacional
+    '3': { primary: '#BC8422', secondary: '#000000' },  // Botafogo - Cor de apoio institucional
+    '4': { primary: '#006437', secondary: '#DCDCDC' },  // Palmeiras
+    '5': { primary: '#CC001A', secondary: '#000000' },  // Sport
+    '6': { primary: '#870A28', secondary: '#00613C' },  // Fluminense
+    '7': { primary: '#007F4E', secondary: '#000000' },  // América MG
+    '8': { primary: '#FE0000', secondary: '#000000' },  // São Paulo
+    '9': { primary: '#C52613', secondary: '#000000' },  // Flamengo
+    '10': { primary: '#C69F0F', secondary: '#DCDCDC' },  // Santos - Cor da coroa em homenagem ao Pelé
+    '11': { primary: '#4D2E6F', secondary: '#DCDCDC' },  // Ceará - Roxo por conta da campanha "Roxo pelo Vozão"
+    '12': { primary: '#0D80BF', secondary: '#000000' },  // Grêmio
+    '13': { primary: '#CC2031', secondary: '#DCDCDC' },  // Corinthians
+    '14': { primary: '#0E8E3A', secondary: '#DCDCDC' },  // Chapecoense
+    '15': { primary: '#E2231A', secondary: '#DCDCDC' },  // Vasco
+    '16': { primary: '#CE181E', secondary: '#000000' },  // Athletico Paranaense
+    '17': { primary: '#2F529E', secondary: '#DCDCDC' },  // Cruzeiro
+    '18': { primary: '#DC1212', secondary: '#000000' },  // Atletico GO
+    '19': { primary: '#00679A', secondary: '#DCDCDC' },  // Avaí
+    '20': { primary: '#00544D', secondary: '#DCDCDC' },  // Coritiba
+    '21': { primary: '#00491E', secondary: '#DCDCDC' },  // Goiás
+    '22': { primary: '#009035', secondary: '#DCDCDC' },  // Juventude
+    '23': { primary: '#006CB5', secondary: '#ED3237' },  // Fortaleza
+    '24': { primary: '#D2003C', secondary: '#001D46' },  // Bragantino
+    '25': { primary: '#FFD503', secondary: '#000000' },  // Atlético MG
+    '26': { primary: '#FFD200', secondary: '#066334' }, // Cuiabá
 }
 
 //Função que é chamada QUANDO QUALQUER FILTRO MUDA. 
@@ -2325,8 +2325,10 @@ function initStickyNavbar() {
 // Função que atualiza a cor de destaque com base no time que está filtrado
 function updateHighlightColor() {
     const selectedTeamId = document.querySelector('#time-filter').value;
-    const color = coresTimes[selectedTeamId]  || '#00bfff'
-    document.documentElement.style.setProperty('--cor-destaque', color);
+    const teamColors = coresTimes[selectedTeamId]  || { primary: '#00bfff', secondary: '#87CEFA' };
+
+    document.documentElement.style.setProperty('--cor-destaque', teamColors.primary);
+    document.documentElement.style.setProperty('--cor-secundaria', teamColors.secondary);
 }
 
 // ----- INICIALIZAÇÃO DA PÁGINA -----

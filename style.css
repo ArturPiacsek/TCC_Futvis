@@ -4,6 +4,7 @@
             --cor-card: white;
             --cor-titulo: #333;
             --cor-destaque: var(--azul); /* Será diferente dependendo do time que está selecionado no filtro */
+            --cor-secundaria: #87cefa;
             --cinza-escuro: #1c1c1c;
             --cinza: #2e2e2e;
             --branco-suave: #f5f5f5;
@@ -18,8 +19,8 @@
         h2 { color: var(--cor-titulo); border-bottom: 2px solid var(--cor-destaque); padding-bottom: 5px; }
         h3 {text-align: center; color: #333;}
         svg { width: 100%; height: auto; }
-        .bar { fill: #1f77b4; }
-        .bar:hover { fill: #ff7f0e; }
+        .bar { fill: var(--cor-destaque); }
+        .bar:hover { fill: var(--cor-secundaria); }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-family: "Roboto Condensed", sans-serif;}
         th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }
         th { background-color: #f4f4f4; }
@@ -394,7 +395,7 @@
         }
         .footer-direitos {
             width: calc(100% - 20px);
-            background-color: black;
+            background-color: #000000;
             padding: 10px;
             margin: 0px;
             text-align: center;
@@ -407,4 +408,5 @@
             --cor-card: #1e1e1e;
             --cor-titulo: #f5f5f5;
             --cor-destaque: var(--azul);
+            --cor-secundaria: #87cefa;
         }
