@@ -43,7 +43,7 @@ function updateAllVisualizations() {
         faltasBtn.classList.add('active');
         cartoesBtn.classList.remove('active');
     }
-
+    updateHighlightColor(); 
     updatePlayerCharts();
     fetchTabelaCampeonato();
     loadTemporalAnalysisCharts();
@@ -56,8 +56,7 @@ function updateAllVisualizations() {
     loadHeatmap();
     loadConversionRateChart();
     loadCleanSheetChart();
-    loadHomeAwayChart();
-    updateHighlightColor();   
+    loadHomeAwayChart();      
 }
 
 // Atualiza todos os gráficos de jogadores com base nos filtros selecionados. 
@@ -407,6 +406,10 @@ function loadCleanSheetChart() {
             if (data && data.length > 0) {
                 const container = d3.select("#clean-sheet-chart");
                 container.html("");
+
+                const computedStyle = getComputedStyle(document.documentElement);
+                const primaryColor = computedStyle.getPropertyValue('--cor-destaque').trim();
+                const secondaryColor = computedStyle.getPropertyValue('--cor-secundaria').trim();
                 
                 const margin = { top: 20, right: 50, bottom: 80, left: 150 };
                 const width = 700 - margin.left - margin.right;
@@ -448,7 +451,7 @@ function loadCleanSheetChart() {
                     .attr("x", 0)
                     .attr("height", yScale.bandwidth())
                     .attr("width", 0) // Estado inicial para a animação
-                    .attr("fill", d => d.nome === selectedTeamName ? "#ff7f0e" : "#1f77b4")
+                    .attr("fill", d => d.nome === selectedTeamName ? secondaryColor: primaryColor)
                     .style("cursor", "pointer")                    
                     .on("click", (event, d) => showTeamDefenseComparisonPanel(d))
                     .on("mouseover", (event, d) => {
@@ -529,6 +532,10 @@ function loadHomeAwayChart() {
                 return;
             }
 
+            const computedStyle = getComputedStyle(document.documentElement);
+            const primaryColor = computedStyle.getPropertyValue('--cor-destaque').trim();
+            const secondaryColor = computedStyle.getPropertyValue('--cor-secundaria').trim();
+
             const margin = {top: 20, right: 100, bottom: 80, left: 150};
             const width = 700 - margin.left - margin.right;
             const height = 600 - margin.top - margin.bottom;
@@ -543,7 +550,7 @@ function loadHomeAwayChart() {
 
             const yScale = d3.scaleBand().domain(groups).range([0, height]).padding([0.2]);
             const xScale = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.pontos_casa, d.pontos_fora)) * 1.1]).range([0, width]);
-            const color = d3.scaleOrdinal().domain(subgroups).range(['#1f77b4','#ff7f0e']); // Azul para casa, Laranja para fora
+            const color = d3.scaleOrdinal().domain(subgroups).range([primaryColor,secondaryColor]);
 
             svg.append("g").call(d3.axisLeft(yScale));
             svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
@@ -933,6 +940,10 @@ function createHistogram(data) {
         return;
     }
 
+    const computedStyle = getComputedStyle(document.documentElement);
+    const primaryColor = computedStyle.getPropertyValue('--cor-destaque').trim();
+    const secondaryColor = computedStyle.getPropertyValue('--cor-secundaria').trim();
+
     const margin = { top: 20, right: 30, bottom: 50, left: 50 };
     const width = 1000 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
@@ -977,11 +988,11 @@ function createHistogram(data) {
         .attr("transform", d => `translate(${xScale(d.x0)}, ${yScale(d.length)})`)
         .attr("width", d => xScale(d.x1) - xScale(d.x0) - 1)
         .attr("height", d => height - yScale(d.length))
-        .style("fill", "#1f77b4")
+        .style("fill", primaryColor)
         .style("cursor", "pointer")
         // 6. Adicionar interatividade
         .on("mouseover", function(event, d) {
-            d3.select(this).style("fill", "#ff7f0e");
+            d3.select(this).style("fill", secondaryColor);
             tooltip.style("opacity", 1)
                    .html(`<strong>Faixa:</strong> ${d.x0}-${d.x1} min/gol<br><strong>Jogadores:</strong> ${d.length}`)
                    .style("left", (event.pageX + 15) + "px")
@@ -990,15 +1001,15 @@ function createHistogram(data) {
         .on("mouseout", function() {
             // Apenas retorna à cor normal se não estiver selecionado
             if (!d3.select(this).classed("selected")) {
-                d3.select(this).style("fill", "#1f77b4");
+                d3.select(this).style("fill", primaryColor);
             }
             tooltip.style("opacity", 0);
         })
         .on("click", function(event, d) {
             // Remove a seleção de todas as outras barras
-            bars.classed("selected", false).style("fill", "#1f77b4");
+            bars.classed("selected", false).style("fill", primaryColor);
             // Adiciona a classe e a cor de seleção à barra clicada
-            d3.select(this).classed("selected", true).style("fill", "#ff7f0e");
+            d3.select(this).classed("selected", true).style("fill", secondaryColor);
             // Chama a função para exibir a lista de jogadores
             displayHistogramPlayerList(d, {x0: d.x0, x1: d.x1});
         });
@@ -2025,6 +2036,10 @@ function createHorizontalBarChart(data, highlightedTeam) {
     const container = d3.select(selector);
     container.html("");
 
+    const computedStyle = getComputedStyle(document.documentElement);
+    const primaryColor = computedStyle.getPropertyValue('--cor-destaque').trim();
+    const secondaryColor = computedStyle.getPropertyValue('--cor-secundaria').trim();
+
     const margin = { top: 20, right: 50, bottom: 80, left: 150 };
     const width = 700 - margin.left - margin.right;
     const height = 600 - margin.top - margin.bottom;
@@ -2066,7 +2081,7 @@ function createHorizontalBarChart(data, highlightedTeam) {
         .attr("fill", d => {
             // Se o nome do time nos dados for igual ao time destacado, pinta de laranja.
             // Senão, usa a cor padrão azul.
-            return d.nome === highlightedTeam ? "#ff7f0e" : "#1f77b4";
+            return d.nome === highlightedTeam ? secondaryColor : primaryColor;
         });
         
     // Adiciona o valor no final da barra
@@ -2325,7 +2340,7 @@ function initStickyNavbar() {
 // Função que atualiza a cor de destaque com base no time que está filtrado
 function updateHighlightColor() {
     const selectedTeamId = document.querySelector('#time-filter').value;
-    const teamColors = coresTimes[selectedTeamId]  || { primary: '#00bfff', secondary: '#87CEFA' };
+    const teamColors = coresTimes[selectedTeamId]  || { primary: '#1f77b4', secondary: '#ff7f0e' };
 
     document.documentElement.style.setProperty('--cor-destaque', teamColors.primary);
     document.documentElement.style.setProperty('--cor-secundaria', teamColors.secondary);
