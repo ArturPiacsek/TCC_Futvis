@@ -4,12 +4,12 @@
             --cor-card: white;
             --cor-titulo: #333;
             --cor-destaque: var(--azul); /* Será diferente dependendo do time que está selecionado no filtro */
-            --cor-secundaria: #87cefa;
+            --cor-secundaria: #ff7f0e;
             --cinza-escuro: #1c1c1c;
             --cinza: #2e2e2e;
             --branco-suave: #f5f5f5;
             --branco: #ffffff;
-            --azul: #00bfff;
+            --azul: #1f77b4;
         }
         
         body { font-family: "Montserrat", "Segoe UI", Roboto, sans-serif; margin: auto; max-width: 1000px; padding: 20px; background-color: var(--cor-fundo); }
@@ -73,7 +73,7 @@
         .kpi-card h3 {
             margin-top: 0;
             font-size: 16px;
-            color: var(--cor-card);
+            color: var(--cinza-escuro);
         }
         .kpi-value {
             font-size: 36px;

@@ -955,16 +955,18 @@ function createHistogram(data) {
     
     const tooltip = d3.select('.tooltip');
 
-    // 1. Escala X (para os valores de "minutos por gol")
+   // 1. Escala X (fixa de 0 a 1000)
     const xScale = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.minutos_por_gol)])
+        .domain([0, 1000])
         .range([0, width]);
 
-    // 2. Função de "binning" do D3
+    // 2. Definir thresholds de 50 em 50
+    const thresholds = d3.range(0, 1000 + 50, 50);
+
     const histogram = d3.histogram()
         .value(d => d.minutos_por_gol)
-        .domain(xScale.domain())
-        .thresholds(xScale.ticks(20)); // Cria cerca de 20 faixas (barras)
+        .domain([0, 1000])   // mesmo domínio do xScale
+        .thresholds(thresholds);
 
     const bins = histogram(data);
 
@@ -1220,7 +1222,7 @@ function updateKpis() {
 /**
  * Função auxiliar para popular um único cartão de KPI.
  * @param {string} selector - O seletor do cartão (ex: '#kpi-posse').
- * @param {object} kpiData - O objeto com {current, previous}.
+ * @param {object} kpiData - O objeto com {current, average}.
  * @param {string} suffix - O sufixo do valor (ex: '%').
  * @param {boolean} higherIsBetter - Define a cor da variação.
  */
@@ -1228,29 +1230,40 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
     const card = document.querySelector(selector);
     const valueEl = card.querySelector('.kpi-value');
     const compEl = card.querySelector('.kpi-comparison');
-
+    
     valueEl.textContent = `${kpiData.current}${suffix}`;
-
-    if (kpiData.previous === null) {
-        compEl.textContent = 'N/A vs ano anterior';
+    
+    if (kpiData.average === null) {        
+        compEl.textContent = 'N/A vs média geral';
         compEl.className = 'kpi-comparison';
         return;
     }
 
-    const diff = kpiData.current - kpiData.previous;
-    const percentageChange = (kpiData.previous > 0) ? diff : 0;
+    // Comparamos os valores para decidir o que exibir.
+    // Usamos parseFloat e toFixed para evitar problemas com casas decimais
+    const isAverageView = parseFloat(kpiData.current).toFixed(1) === parseFloat(kpiData.average).toFixed(1);
 
-    let arrow = percentageChange > 0.01 ? '▲' : (percentageChange < -0.01 ? '▼' : '');
-    let className = '';
+    if (isAverageView) {
+        // CENÁRIO 1: Nenhuma temporada selecionada. Exibe "Média Geral".
+        compEl.textContent = 'Média Geral';
+        compEl.className = 'kpi-comparison'; // Reseta a classe para remover cores (vermelho/verde)
+    } else {
+        // CENÁRIO 2: Uma temporada específica foi selecionada. Exibe a comparação.
+        const diff = kpiData.current - kpiData.average;
+        const change = diff;
 
-    if (arrow === '▲') {
-        className = higherIsBetter ? 'positive' : 'negative';
-    } else if (arrow === '▼') {
-        className = higherIsBetter ? 'negative' : 'positive';
+        let arrow = change > 0.01 ? '▲' : (change < -0.01 ? '▼' : '');
+        let className = '';
+
+        if (arrow === '▲') {
+            className = higherIsBetter ? 'positive' : 'negative';
+        } else if (arrow === '▼') {
+            className = higherIsBetter ? 'negative' : 'positive';
+        }
+
+        compEl.innerHTML = `<span class="${className}">${arrow} ${change.toFixed(1)}</span> vs média geral`;
     }
-
-    compEl.innerHTML = `<span class="${className}">${arrow} ${percentageChange.toFixed(1)}</span> vs ano anterior`;
-}
+ }
 
     function createBubbleMap(data, worldAtlas) {
         const selector = "#bubble-map-chart";
@@ -1583,12 +1596,7 @@ function createScatterPlot(data) {
 
     const yScale = d3.scaleLinear()
         .domain(d3.extent(data, d => +d.total_gols)).nice()
-        .range([height, 0]);
-
-    // Usamos scaleSqrt para que a ÁREA da bolha seja proporcional, não o raio
-    const sizeScale = d3.scaleSqrt()
-        .domain([0, d3.max(data, d => +d.total_chutes_no_gol)])
-        .range([8, 40]); // Tamanho da logo de 8px a 40px
+        .range([height, 0]);    
 
     // 2. Eixos
     svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale));
@@ -1615,10 +1623,10 @@ function createScatterPlot(data) {
         .data(data)
         .enter()
         .append("image")
-        .attr("x", d => xScale(+d.media_posse) - (sizeScale(+d.total_chutes_no_gol) / 2))
-        .attr("y", d => yScale(+d.total_gols) - (sizeScale(+d.total_chutes_no_gol) / 2))
-        .attr("width", d => sizeScale(+d.total_chutes_no_gol))
-        .attr("height", d => sizeScale(+d.total_chutes_no_gol))
+        .attr("x", d => xScale(+d.media_posse) - 15)
+        .attr("y", d => yScale(+d.total_gols) - 15)
+        .attr("width", 30)
+        .attr("height", 30)
         .attr("href", d => d.logo_url_time)
         .attr("referrerpolicy", "no-referrer")        
         .on("mouseover", function(event, d) {

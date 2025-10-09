@@ -430,21 +430,14 @@ app.get('/api/analise-temporal', async (req, res) => {
     }
 });
 
-// Rota 8: Rota para os KPIs com comparativo anual
+// Rota 8: Rota para os KPIs com comparativo (agora com a média geral)
 app.get('/api/kpis', async (req, res) => {
     try {
-        const { id_time, id_tempo } = req.query;
+        const { id_time, id_tempo } = req.query;        
 
-        // Mapeamento de temporada para a temporada anterior
-        const previousTempoMap = {
-            '549': '276', // 2023 -> 2022
-            '276': '1',   // 2022 -> 2021
-            '1': null     // 2021 não tem ano anterior nos dados
-        };
-
-        // Função auxiliar para buscar os dados de um período
-        const getKpiData = async (tempoFilter) => {
-            if (!tempoFilter) return null; // Não busca se não houver período
+        // Função auxiliar para buscar os dados de um período específico (sem alterações)
+        const getKpiDataForYear = async (tempoFilter) => {
+            if (!tempoFilter) return null;
 
             let whereClauses = [`FCT.id_tempo = ?`];
             let params = [tempoFilter];
@@ -463,25 +456,58 @@ app.get('/api/kpis', async (req, res) => {
                 WHERE ${whereClauses.join(' AND ')};
             `;
             const result = await executeQuery(sql, params);
-            // Retorna a primeira linha, ou null se não houver dados
+            return result.length > 0 ? result[0] : null;
+        };
+        
+        //Função para buscar a média de todos os anos para um time
+        const getKpiAverageData = async () => {
+            let whereClauses = [];
+            let params = [];
+
+            if (id_time) {
+                whereClauses.push(`FCT.id_time = ?`);
+                params.push(id_time);
+            } else {
+                return null;
+            }
+
+            // A query SQL foi reescrita para usar médias ponderadas
+            const sql = `
+                SELECT            
+                    SUM(FCT.media_pct_passes * FCT.total_jogos) / SUM(FCT.total_jogos) as passes,            
+                    SUM(FCT.defesas_goleiro_total) / SUM(FCT.total_jogos) as defesas,            
+                    SUM(FCT.media_posse_bola * FCT.total_jogos) / SUM(FCT.total_jogos) as posse            
+                FROM fato_estatisticas_clube_temporal AS FCT
+                ${whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : ''};
+            `;
+            const result = await executeQuery(sql, params);
             return result.length > 0 ? result[0] : null;
         };
 
-        // Determina o período atual e o anterior
-        const currentTempo = id_tempo || '549'; // Se nenhum ano for selecionado, assume o mais recente (2023)
-        const previousTempo = previousTempoMap[currentTempo];
+         let currentData;
+        let averageData;
 
-        // Busca os dados para ambos os períodos em paralelo
-        const [currentData, previousData] = await Promise.all([
-            getKpiData(currentTempo),
-            getKpiData(previousTempo)
-        ]);
+        // Lógica condicional: verifica se uma temporada específica foi selecionada
+        if (id_tempo) {
+            // CASO 1: Uma temporada específica foi selecionada
+            // Busca os dados do ano selecionado e a média geral em paralelo
+            [currentData, averageData] = await Promise.all([
+                getKpiDataForYear(id_tempo),
+                getKpiAverageData()
+            ]);
+        } else {
+            // CASO 2: Nenhuma temporada selecionada ("Todas as Temporadas")
+            // Busca a média geral apenas uma vez
+            const generalAverage = await getKpiAverageData();
+            // Usa o mesmo resultado para ambos os valores
+            currentData = generalAverage;
+            averageData = generalAverage;
+        }
 
         // Formata a resposta
         const formatResponse = (key) => ({
-             // Se currentData for null, valor é 0. Usamos parseFloat para garantir que é número.
-            current: currentData ? parseFloat(currentData[key] || 0).toFixed(1) : 0,
-            previous: previousData ? parseFloat(previousData[key] || 0).toFixed(1) : null,
+            current: currentData ? parseFloat(currentData[key] || 0).toFixed(1) : 0,            
+            average: averageData ? parseFloat(averageData[key] || 0).toFixed(1) : null,
         });
 
         res.json({
