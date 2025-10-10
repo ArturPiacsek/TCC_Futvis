@@ -29,7 +29,7 @@ const coresTimes = {
     '26': { primary: '#FFD200', secondary: '#066334' }, // Cuiabá
 }
 
-//Função que é chamada QUANDO QUALQUER FILTRO MUDA. 
+// ----- Função que é chamada QUANDO QUALQUER FILTRO MUDA.  -----
 function updateAllVisualizations() {
     hidePlayerDetails();
     hideTeamComparisonPanel();
@@ -59,7 +59,7 @@ function updateAllVisualizations() {
     loadHomeAwayChart();      
 }
 
-// Atualiza todos os gráficos de jogadores com base nos filtros selecionados. 
+// ----- Atualiza todos os gráficos de jogadores com base nos filtros selecionados. -----
 function updatePlayerCharts() {
     const selectedTeamId = document.querySelector('#time-filter').value;
     const selectedTempoId = document.querySelector('#temporada-filter').value;
@@ -84,9 +84,7 @@ function updatePlayerCharts() {
     .catch(error => console.error('Erro ao carregar dados de disciplina:', error));
 }
 
-
-// Busca e desenha a tabela do campeonato com base no filtro de temporada.
- 
+// ----- Busca e desenha a tabela do campeonato com base no filtro de temporada. ----- 
 function fetchTabelaCampeonato() {
     // Agora lê do filtro global. Se nenhum for selecionado, usa o ID padrão (549 - 2023).
     const selectedIdTempo = document.querySelector('#temporada-filter').value || '549';
@@ -99,8 +97,7 @@ function fetchTabelaCampeonato() {
     fetchAndDrawTable(apiUrl, "#tabela-campeonato-table", headers, keys);
 }
 
-
-//Popula os menus de filtro buscando os dados da API.
+// ----- Popula os menus de filtro buscando os dados da API. -----
 function populateFilters() {
     // Popula filtro de times
     fetch(`${API_BASE_URL}/times`)
@@ -123,23 +120,29 @@ function populateFilters() {
         });
 }
 
+// ----- Função para carregar os dados da Análise Temporal ----- 
 function loadTemporalAnalysisCharts() {
-    const selectedTeamId = document.querySelector('#time-filter').value;
-    const teamQueryParam = selectedTeamId ? `?id_time=${selectedTeamId}` : '';
+    const selectedTeamId = document.querySelector('#time-filter').value;    
+    const selectElement = document.querySelector('#temporada-filter');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const selectedYear = selectedOption.value ? selectedOption.text : '';
 
-    fetch(`${API_BASE_URL}/analise-temporal${teamQueryParam}`)
+    const queryParams = [];
+    if (selectedTeamId) queryParams.push(`id_time=${selectedTeamId}`);
+    if (selectedYear) queryParams.push(`ano=${selectedYear}`); // Envia 'ano'
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+    fetch(`${API_BASE_URL}/analise-temporal${queryString}`)
         .then(res => res.json())
         .then(data => {
             if (data && data.length > 0) {
                 createMultiLineChart(data);
                 createStackedAreaChart(data);
             } else {
-                // Limpa os gráficos se não houver dados
-                d3.select("#multi-line-chart").html("<p>Nenhum dado encontrado para este time.</p>");
-                d3.select("#stacked-area-chart").html("<p>Nenhum dado encontrado para este time.</p>");
+                d3.select("#stacked-area-chart").html("<p>Nenhum dado encontrado para esta combinação de filtros.</p>");
             }
         })
-        .catch(error => console.error('Erro ao carregar dados para análise temporal:', error));
+        .catch(error => console.error('Erro ao carregar dados da análise temporal:', error));
 }
 
 // ----- Função para carregar os dados do Scatter Plot -----
@@ -216,7 +219,7 @@ function fetchAndDrawTable(apiUrl, selector, headers, keys) {
         });
 }
 
-//Função principal para carregar os dados da análise de goleiros. 
+// ----- Função principal para carregar os dados da análise de goleiros. -----
 function loadGoalkeeperAnalysis() {
     // Lê ambos os filtros
     const selectedTeamId = document.querySelector('#time-filter').value;
@@ -264,7 +267,7 @@ function loadChordDiagram() {
         .catch(error => console.error('Erro ao carregar dados para o gráfico de acordes:', error));
 }
 
-/** Função principal para carregar os dados do Heatmap e configurar os controles. */
+// ----- Função principal para carregar os dados do Heatmap e configurar os controles. -----
 function loadHeatmap() {
     const selectedTeamId = document.querySelector('#time-filter').value;
     const selectElement = document.querySelector('#temporada-filter');
@@ -306,7 +309,7 @@ function loadHeatmap() {
         .catch(error => console.error('Erro ao carregar dados do heatmap:', error));
 }
 
-/** Função principal para carregar os dados da Taxa de Conversão. */
+// ----- Função principal para carregar os dados da Taxa de Conversão. -----
 function loadConversionRateChart() {
     const selectedTempoId = document.querySelector('#temporada-filter').value;
     const tempoQueryParam = selectedTempoId ? `?id_tempo=${selectedTempoId}` : '';
@@ -333,16 +336,16 @@ function hideTeamComparisonPanel() {
     d3.select("#team-comparison-panel").style("display", "none");
 }
 
-/** Esconde o painel de comparação defensiva. */
+// Esconde o painel de comparação defensiva. 
 function hideTeamDefenseComparisonPanel() {
     d3.select("#team-defense-comparison-panel").style("display", "none");
 }
-/** Esconde o painel de comparação de gols. */
+// Esconde o painel de comparação de gols. 
 function hideTeamGoalsComparisonPanel() {
     d3.select("#team-goals-comparison-panel").style("display", "none");
 }
 
-/** Esconde o painel de detalhes de nacionalidade. */
+// Esconde o painel de detalhes de nacionalidade. 
 function hideNationalityDetails() {
     d3.select("#nationality-details-panel").style("display", "none");
 }
@@ -390,7 +393,7 @@ function showTeamComparisonPanel(clickedTeamData) {
     }
 }
 
-/** Função principal para carregar e desenhar o gráfico de Clean Sheets. */
+// ----- Função principal para carregar e desenhar o gráfico de Clean Sheets. -----
 function loadCleanSheetChart() {
     const selectElement = document.querySelector('#temporada-filter');
     const selectedOption = selectElement.options[selectElement.selectedIndex];
@@ -476,7 +479,7 @@ function loadCleanSheetChart() {
             }
         });
 }
-/** Orquestra a exibição do painel de comparação defensiva. */
+// ----- Orquestra a exibição do painel de comparação defensiva. -----
 function showTeamDefenseComparisonPanel(clickedTeamData) {
     const panel = d3.select("#team-defense-comparison-panel");
     const baseContainer = d3.select("#defense-detail-base");
@@ -513,7 +516,7 @@ function showTeamDefenseComparisonPanel(clickedTeamData) {
     }
 }
 
-// Função principal para carregar e desenhar o gráfico de barras agrupadas. 
+// ----- Função principal para carregar e desenhar o gráfico de barras agrupadas. -----
 function loadHomeAwayChart() {
     const selectElement = document.querySelector('#temporada-filter');
     const selectedOption = selectElement.options[selectElement.selectedIndex];
@@ -613,7 +616,7 @@ function loadHomeAwayChart() {
         });
 }
 
-/** Orquestra a exibição do painel de comparação de gols. */
+// ----- Orquestra a exibição do painel de comparação de gols. -----
 function showTeamGoalsComparisonPanel(clickedTeamData) {
     const panel = d3.select("#team-goals-comparison-panel");
     const baseContainer = d3.select("#goals-detail-base");
@@ -764,7 +767,7 @@ function abreviaNome(nomeCompleto) {
     return `${nome} ${sobrenome}`;
 }
 
-// Função para criar Gráfico de Barras
+// ----- Função para criar Gráfico de Barras -----
 function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
     const container = d3.select(selector);
     container.html(""); // Limpa o container
@@ -864,6 +867,7 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
         });    
 }
 
+// ----- Função para criar tabela do campeonato -----
 function createTable(data, selector, headers, keys) {
     const container = d3.select(selector);
     container.html("");
@@ -1034,8 +1038,7 @@ function loadHistogram() {
         .catch(error => console.error('Erro ao carregar dados do histograma:', error));
 }
 
-// GRÁFICO DE LINHAS MÚLTIPLAS
-
+// ----- FUNÇÃO PARA CRIAR GRÁFICO DE LINHAS MÚLTIPLAS -----
 function createMultiLineChart(data) {
     const isTeamSpecific = data.length > 0 && data[0].hasOwnProperty('pct_vitorias');
     const yAxisLabel = isTeamSpecific ? "Média de Gols Marcados" : "Média de Gols por Jogo";
@@ -1106,7 +1109,7 @@ function createMultiLineChart(data) {
         });
 }
 
-
+// ----- Função para criar gráfico de área empilhada -----
 function createStackedAreaChart(data) {
     const selector = "#stacked-area-chart";
     const container = d3.select(selector);
@@ -1127,13 +1130,13 @@ function createStackedAreaChart(data) {
         { pct_vitorias: "Vitórias", pct_empates: "Empates", pct_derrotas: "Derrotas" } :
         { pct_vitorias_casa: "Mandante", pct_vitorias_fora: "Visitante", pct_empates: "Empates" };
 
-    const margin = { top: 20, right: 150, bottom: 50, left: 100 }; // Aumentei a margem direita
+    const margin = { top: 5, right: 150, bottom: 50, left: 100 }; // Aumentei a margem direita
     const width = 1000 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
         
     const svg = container.append("svg")
         .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
-      .append("g")
+        .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
         
     const tooltip = d3.select('.tooltip');
@@ -1143,18 +1146,29 @@ function createStackedAreaChart(data) {
     const stack = d3.stack().keys(keys);
     const stackedData = stack(formattedData);
 
-    const xScale = d3.scaleTime().domain(d3.extent(formattedData, d => d.date)).range([0, width]);
+     const xScale = d3.scalePoint()
+        .domain(formattedData.map(d => d.date)) // O domínio é a lista de datas com dados
+        .range([0, width]);
+
     const yScale = d3.scaleLinear().domain([0, 100]).range([height, 0]);
     const colorScale = d3.scaleOrdinal().domain(keys).range(colorRange);
-
     const areaGenerator = d3.area().x(d => xScale(d.data.date)).y0(d => yScale(d[0])).y1(d => yScale(d[1]));
 
     svg.selectAll(".area").data(stackedData).enter().append("path").attr("class", "area").style("fill", d => colorScale(d.key)).attr("d", areaGenerator);
-    svg.append("g").attr("transform", `translate(0, ${height})`).call(d3.axisBottom(xScale).ticks(d3.timeYear.every(1)).tickFormat(d3.timeFormat("%Y")));
-    svg.append("g").call(d3.axisLeft(yScale).tickFormat(d => `${d}%`));
-    svg.append("text").attr("x", width / 2).attr("y", height + 40).text("Tempo").style("text-anchor", "middle");
-    svg.append("text").attr("transform", "rotate(-90)").attr("y", -40).attr("x", -height / 2).text("% de Resultados").style("text-anchor", "middle");
+    
+    // O eixo X agora usa a nova escala de pontos
+    svg.append("g")
+        .attr("transform", `translate(0, ${height})`)
+        .call(d3.axisBottom(xScale)
+            .tickFormat(d3.timeFormat("%b '%y"))
+        )
+        .selectAll("text")
+            .attr("transform", "translate(-10,0)rotate(-45)")
+            .style("text-anchor", "end")
+            .style("font-size", "12px");
 
+    svg.append("g").call(d3.axisLeft(yScale).tickFormat(d => `${d}%`)).selectAll("text").style("font-size", "12px");
+    svg.append("text").attr("transform", "rotate(-90)").attr("y", -40).attr("x", -height / 2).text("% de Resultados").style("text-anchor", "middle");    
     const legend = svg.selectAll(".legend").data(keys).enter().append("g").attr("class", "legend").attr("transform", (d, i) => `translate(0,${i * 20})`);
     legend.append("rect").attr("x", width + 5).attr("width", 18).attr("height", 18).style("fill", d => colorScale(d));
     legend.append("text").attr("x", width + 30).attr("y", 9).attr("dy", ".35em").text(d => legendLabels[d]).style("text-anchor", "start");
@@ -1168,17 +1182,18 @@ function createStackedAreaChart(data) {
         .on("mouseout", () => { focusLine.style("opacity", 0); focusCircles.style("opacity", 0); tooltip.style('opacity', 0); })
         .on("mousemove", (event) => {
             const mouseX = d3.pointer(event)[0];
-            const xDate = xScale.invert(mouseX);
-            const index = bisectDate(formattedData, xDate, 1);
-            const d0 = formattedData[index - 1];
-            const d1 = formattedData[index];
-            const d = (d1 && (xDate - d0.date > d1.date - xDate)) ? d1 : d0;
+            
+            // Encontra o índice do ponto mais próximo da posição do mouse
+            const eachBand = xScale.step();
+            const index = Math.round(mouseX / eachBand);
+            const d = formattedData[index];
+
             if (d) {
                 focusLine.attr("x1", xScale(d.date)).attr("x2", xScale(d.date)).attr("y1", 0).attr("y2", height);
                 let tooltipContent = `<strong>${d3.timeFormat("%b %Y")(d.date)}</strong><br/>`;
                 focusCircles.each(function(key) {
                     const series = stackedData.find(s => s.key === key);
-                    const point = series[formattedData.indexOf(d)];
+                    const point = series[index];
                     d3.select(this).attr("cx", xScale(d.date)).attr("cy", yScale(point[1])).style("opacity", 1);
                     tooltipContent += `<span style="color:${colorScale(key)};">●</span> ${legendLabels[key]}: ${d[key]}%<br/>`;
                 });
@@ -1187,6 +1202,7 @@ function createStackedAreaChart(data) {
         });
 }
 
+// ----- Função para criar KPIs -----
 function updateKpis() {
     const kpiContainer = document.getElementById('kpi-container');
     const selectedTeamId = document.querySelector('#time-filter').value;
@@ -1265,6 +1281,7 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
     }
  }
 
+// ----- Função para criar mapa com bolhas ----- 
     function createBubbleMap(data, worldAtlas) {
         const selector = "#bubble-map-chart";
         const container = d3.select(selector);
@@ -1342,6 +1359,7 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
         });
     }
 
+// ----- Função para criar gráfico de barra empilhada -----    
     function createStackedBarChart(data, selector,  yAxisLabel) {    
     const container = d3.select(selector);
     container.html(""); // Limpa o container
@@ -1452,8 +1470,7 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
         });
 }
 
-//Cria um gráfico de barras horizontais para o % de defesas dos goleiros.
- 
+// ----- Função para Criar um gráfico de barras horizontais (% de defesas dos goleiros). ----- 
 function createGoalkeeperBarChart(data) {
     const selector = "#goleiro-barras";
     const container = d3.select(selector);
@@ -1508,7 +1525,7 @@ function createGoalkeeperBarChart(data) {
         .on("mouseout", () => tooltip.style("opacity", 0));
 } 
 
-//Cria o gráfico de dispersão para a análise de goleiros. 
+// ----- Função para Criar o gráfico de dispersão (análise de goleiros). -----
 function createGoalkeeperScatterPlot(data, selector) {    
     const container = d3.select(selector);
     container.html("");
@@ -1645,6 +1662,7 @@ function createScatterPlot(data) {
         });
 }
 
+// ----- Função para mostrar estatisticas dos jogadores -----
 function showPlayerDetails(playerData) {
     const selectedTempoId = document.querySelector('#temporada-filter').value;
     const tempoQueryParam = selectedTempoId ? `?id_tempo=${selectedTempoId}` : '';
@@ -1675,12 +1693,12 @@ function showPlayerDetails(playerData) {
         .catch(error => console.error('Erro ao buscar detalhes do jogador:', error));
 }
 
-/** Esconde o painel de detalhes. */
+// ----- Esconde o painel de detalhes. -----
 function hidePlayerDetails() {
     document.getElementById('player-details-panel').style.display = 'none';
 }
 
-/** Cria o Radar Chart com os dados do jogador. */
+// ----- Cria o Radar Chart com os dados do jogador. -----
 function createRadarChart(playerData, selector) {
     const container = d3.select(selector);
     container.html("");
@@ -1727,7 +1745,7 @@ function createRadarChart(playerData, selector) {
        .style("fill", "#1f77b4").style("fill-opacity", 0.7);
 }
 
-/** Popula a lista de estatísticas ao lado do Radar Chart */
+// ----- Popula a lista de estatísticas ao lado do Radar Chart -----
 function displayRadarStatsList(playerData) {
     const container = d3.select("#radar-stats-list");
     container.html("");
@@ -1776,7 +1794,7 @@ function displayRadarStatsList(playerData) {
     });
 }
 
-/** Cria o Radar Chart específico para GOLEIROS. */
+// ----- Cria o Radar Chart específico para GOLEIROS. -----
 function createGoalkeeperRadarChart(gkData, maxValues) {
     const selector = "#radar-chart-details";
     const container = d3.select(selector);
@@ -1831,7 +1849,7 @@ function createGoalkeeperRadarChart(gkData, maxValues) {
        .style("fill", "#2ca02c").style("fill-opacity", 0.7); // Cor diferente para goleiros
 }
 
-/** Popula a lista de estatísticas específica para GOLEIROS. */
+// ----- Popula a lista de estatísticas específica para GOLEIROS. -----
 function displayGoalkeeperStatsList(gkData, maxValues) {
     const container = d3.select("#radar-stats-list");
     container.html("");
@@ -1863,7 +1881,7 @@ function displayGoalkeeperStatsList(gkData, maxValues) {
     });
 }
 
-/** Prepara os dados e exibe o painel de detalhes para um goleiro. */
+// ----- Prepara os dados e exibe o painel de detalhes para um goleiro. -----
 function showGoalkeeperDetails(clickedGkData, allGkData) {
     const panel = document.getElementById('player-details-panel');
 
@@ -1889,6 +1907,7 @@ function showGoalkeeperDetails(clickedGkData, allGkData) {
     panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+// ----- Função para criar diagrama de acordes -----
 function createChordDiagram(data) {
     const selector = "#chord-diagram-chart";
     const container = d3.select(selector);
@@ -2234,7 +2253,7 @@ function createPieChart(data, selector) {
 }
 
 
-/** Cria o gráfico de detalhes defensivos (gols sofridos em casa vs fora). */
+// ----- Cria o gráfico de detalhes defensivos (gols sofridos em casa vs fora). -----
 function createDefenseDetailChart(data, selector) {
     const container = d3.select(selector);
     container.html("");
@@ -2285,7 +2304,7 @@ function createDefenseDetailChart(data, selector) {
         });
 }
 
-/** Cria o gráfico de detalhes de gols (marcados em casa vs fora). */
+// ----- Cria o gráfico de detalhes de gols (marcados em casa vs fora). -----
 function createGoalsDetailChart(data, selector) {
     // Esta função é muito parecida com a createDefenseDetailChart, adaptamos para gols marcados
     const container = d3.select(selector);
@@ -2327,7 +2346,7 @@ function createGoalsDetailChart(data, selector) {
         });
 }
 
-// Função que fixa o navbar na parte superior da tela
+// ----- Função que fixa o navbar na parte superior da tela -----
 function initStickyNavbar() {
     const navbar = document.querySelector('.navbar');
     const trigger = document.querySelector('h1');
@@ -2345,7 +2364,7 @@ function initStickyNavbar() {
     });
 }
 
-// Função que atualiza a cor de destaque com base no time que está filtrado
+// ----- Função que atualiza a cor de destaque com base no time que está filtrado -----
 function updateHighlightColor() {
     const selectedTeamId = document.querySelector('#time-filter').value;
     const teamColors = coresTimes[selectedTeamId]  || { primary: '#1f77b4', secondary: '#ff7f0e' };

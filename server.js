@@ -363,35 +363,44 @@ app.get('/api/tabela-campeonato', async (req, res) => {
 
 app.get('/api/analise-temporal', async (req, res) => {
     try {
-        const { id_time } = req.query; // Pega o filtro de time da URL
+        const { id_time, ano } = req.query;
         let sql;
         let params = [];
+        let whereClauses = [];
+        const anos_validos = ['2021', '2022', '2023'];
 
         if (id_time) {
-            // QUERY PARA UM TIME ESPECÍFICO
-            // Usamos a tabela fato_estatisticas_clube_temporal
+            // --- QUERY PARA UM TIME ESPECÍFICO (Esta parte já estava correta) ---
             sql = `
                 SELECT
-                    DT.temporada,
+                    DT.ano AS temporada,
                     DT.mes,                    
                     ROUND(SUM(FCT.gols_marcados) / SUM(FCT.total_jogos), 2) AS media_gols_por_jogo,                    
                     ROUND(SUM(FCT.vitorias) * 100.0 / SUM(FCT.total_jogos), 2) AS pct_vitorias,
                     ROUND(SUM(FCT.derrotas) * 100.0 / SUM(FCT.total_jogos), 2) AS pct_derrotas,
                     ROUND(SUM(FCT.empates) * 100.0 / SUM(FCT.total_jogos), 2) AS pct_empates
-                FROM
-                    fato_estatisticas_clube_temporal AS FCT
-                JOIN
-                    dim_tempo AS DT ON FCT.id_tempo = DT.id_tempo
-                WHERE
-                    FCT.id_time = ? AND (DT.temporada IS NOT NULL AND DT.mes IS NOT NULL AND DT.dia_semana IS NULL)
-                GROUP BY
-                    DT.temporada, DT.mes
-                ORDER BY
-                    DT.temporada, DT.mes;
+                FROM fato_estatisticas_clube_temporal AS FCT
+                JOIN dim_tempo AS DT ON FCT.id_tempo = DT.id_tempo
             `;
+            
+            whereClauses.push(`FCT.id_time = ?`);
             params.push(id_time);
+            
+            if (ano && anos_validos.includes(ano)) {
+                whereClauses.push(`DT.ano = ?`);
+                params.push(ano);
+            } else {
+                whereClauses.push(`DT.ano IN (?, ?, ?)`);
+                params.push(...anos_validos);
+            }
+            
+            whereClauses.push(`(DT.mes IS NOT NULL AND DT.dia_semana IS NULL)`);
+
+            sql += ` WHERE ${whereClauses.join(' AND ')}`;
+            sql += ` GROUP BY DT.ano, DT.mes ORDER BY DT.ano, DT.mes;`;
+
         } else {
-            // QUERY ORIGINAL PARA A LIGA INTEIRA (sem filtro de time)
+            // --- QUERY GERAL PARA A LIGA INTEIRA (VERSÃO CORRIGIDA) ---
             sql = `
                 SELECT
                     DT.temporada,
@@ -400,17 +409,23 @@ app.get('/api/analise-temporal', async (req, res) => {
                     ROUND(SUM(FTG.vitorias_mandante) * 100.0 / SUM(FTG.total_partidas), 2) AS pct_vitorias_casa,
                     ROUND(SUM(FTG.vitorias_visitante) * 100.0 / SUM(FTG.total_partidas), 2) AS pct_vitorias_fora,
                     ROUND(SUM(FTG.empates) * 100.0 / SUM(FTG.total_partidas), 2) AS pct_empates
-                FROM
-                    fato_temporal_geral AS FTG
-                JOIN
-                    dim_tempo AS DT ON FTG.id_tempo = DT.id_tempo
-                WHERE
-                    (DT.temporada IS NOT NULL and DT.mes is not null and DT.dia_semana is null)
-                GROUP BY
-                    DT.temporada, DT.mes
-                ORDER BY
-                    DT.temporada, DT.mes;
+                FROM fato_temporal_geral AS FTG
+                JOIN dim_tempo AS DT ON FTG.id_tempo = DT.id_tempo
             `;
+
+            // Lógica de filtro CORRETA, usando DT.ano para a tabela dim_tempo
+            if (ano && anos_validos.includes(ano)) {
+                whereClauses.push(`DT.ano = ?`);
+                params.push(ano);
+            } else {
+                whereClauses.push(`DT.ano IN (?, ?, ?)`);
+                params.push(...anos_validos);
+            }
+            
+            whereClauses.push(`(DT.mes IS NOT NULL AND DT.dia_semana IS NULL)`);
+            
+            sql += ` WHERE ${whereClauses.join(' AND ')}`;
+            sql += ` GROUP BY DT.temporada, DT.mes ORDER BY DT.temporada, DT.mes;`;
         }
         
         const data = await executeQuery(sql, params);

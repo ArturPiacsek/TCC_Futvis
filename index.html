@@ -61,7 +61,8 @@
             <div class="tabs-nav">
                 <button class="tab-button active" data-target="#performance-tab">Desempenho (Casa/Fora)</button>
                 <button class="tab-button" data-target="#conversion-rate-tab">Eficiência Ofensiva</button>
-                <button class="tab-button" data-target="#clean-sheets-tab">Jogos Sem Sofrer Gol</button>                
+                <button class="tab-button" data-target="#clean-sheets-tab">Jogos Sem Sofrer Gol</button>
+                <button class="tab-button" data-target="#scatter-plot-tab">Estilo de Jogo (Posse vs Gols)</button>                
             </div>
 
             <div class="tabs-content">
@@ -71,6 +72,8 @@
                     <div id="clean-sheet-chart"></div> </div>
                 <div id="conversion-rate-tab" class="tab-pane">
                     <div id="conversion-rate-chart"></div> </div>
+                <div id="scatter-plot-tab" class="tab-pane">
+                    <div id="scatter-plot-chart"></div> </div>    
             </div>
             <div id="team-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
                 <h3>Chances Criadas</h3>
@@ -94,38 +97,30 @@
                 </div>
             </div>
         </section>
-
-        <section class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Média de Gols Entre Temporadas</h2>
-            <div id="multi-line-chart"></div>
-        </section>                             
-        
         <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <div class='heatmap'>
-                <h2>Heatmap de Disciplina</h2>
-                <div class="heatmap-toggle">
-                    <button id="heatmap-faltas-btn" class="active">Faltas</button>
-                    <button id="heatmap-cartoes-btn">Cartões</button>
-                </div>
+        <div class="tabs-nav">
+                <button class="tab-button active" data-target="#stacked-area-tab">Porcentagem de Resultados</button>
+                <button class="tab-button" data-target="#media-gols-tab">Média de Gols Entre Temporadas</button>
+                <button class="tab-button" data-target="#heatmap-tab">Heatmap de Disciplina</button>                
+                <button class="tab-button" data-target="#chord-diagram-tab">Fluxo de Vitórias</button>                
             </div>
-            <div id="heatmap-chart"></div>
-        </section>
-        
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Análise de Estilo de Jogo (Posse vs Gols)</h2>
-            <div id="scatter-plot-chart"></div>
-        </div>
 
-        <section class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Composição dos Resultados (Vitórias, Derrotas e Empates)</h2>
-            <div id="stacked-area-chart"></div>
-        </section>        
-               
-        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <h2>Fluxo de Vitórias Entre Times</h2>
-            <div id="chord-diagram-chart" style="display: flex; justify-content: center; align-items: center; height: 100%;">                   
-            </div>                
-        </section>    
+            <div class="tabs-content">
+                <div id="stacked-area-tab" class="tab-pane active">
+                    <div id="stacked-area-chart"></div> </div>
+                <div id="heatmap-tab" class="tab-pane">
+                    <div class="heatmap-toggle">
+                        <button id="heatmap-faltas-btn" class="active">Faltas</button>
+                        <button id="heatmap-cartoes-btn">Cartões</button>
+                    </div>
+                    <div id="heatmap-chart"></div>
+                </div>
+                <div id="media-gols-tab" class="tab-pane">
+                    <div id="multi-line-chart"></div> </div>
+                <div id="chord-diagram-tab" class="tab-pane">
+                    <div id="chord-diagram-chart"></div> </div>    
+            </div>
+        </section>         
          
         <section class="chart-container" style="grid-column: 1 / -1;">
             <h2>Distribuição de Jogadores por Nacionalidade</h2>
@@ -143,6 +138,7 @@
                 <button class="tab-button" data-target="#participacoes-tab">Participações em Gol</button>
                 <button class="tab-button" data-target="#disciplina-tab">Disciplina</button>
                 <button class="tab-button" data-target="#goleiros-scatter-tab">Goleiros (Volume vs Eficiência)</button>
+                <button class="tab-button" data-target="#gol-minuto-tab">Minutos por Gol</button>
             </div>
 
             <div class="tabs-content">
@@ -156,6 +152,10 @@
                     </div>
                 <div id="goleiros-scatter-tab" class="tab-pane">
                     </div>
+                <div id="gol-minuto-tab" class="tab-pane">
+                    <div id="histogram-chart"></div>
+                    <div id="histogram-details"></div>
+                    </div>    
             </div>
         </section>
         <section id="player-details-panel" class="chart-container" style="grid-column: 1 / -1; display: none; position: relative;">
@@ -177,13 +177,7 @@
                     </div>
 
             </div>
-        </section>
-
-        <section class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Distribuição de Eficiência (Minutos por Gol)</h2>
-            <div id="histogram-chart"></div>
-            <div id="histogram-details"></div>
-        </section>   
+        </section>      
                
         <section class="chart-container" style="grid-column: 1 / -1;"> 
             <h2>Tabela do Campeonato</h2>            
