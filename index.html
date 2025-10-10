@@ -26,167 +26,165 @@
         </select>
     </aside>
 
-    <nav class="navbar"> <!--Cria menu de navegação na parte superior da tela-->
-        <ul>                      
-            <li><a href="#bubble-map-chart">Nacionalidades</a></li>
-            <li><a href="#tabela-campeonato-table">Tabela</a></li>
-            <li><a href="#artilheiros-tab">Jogadores</a></li>              
-        </ul>
-    </nav>
+    <nav class="main-nav">
+        <button id="show-teams-btn" class="nav-button active">Análise de Times</button>
+        <button id="show-players-btn" class="nav-button">Análise de Jogadores</button>
+    </nav>    
 
-    <h1>Dashboard de Análise de Times</h1>
+    <div id="teams-view" class="view active">
+        <h1>Dashboard de Análise de Times</h1>
+        <div id="kpi-container" class="kpi-grid" style="display: none;">
+            <div class="kpi-card" id="kpi-passes">
+                <h3>Precisão de Passes</h3>
+                <p class="kpi-value">--%</p>
+                <p class="kpi-comparison">-- vs ano anterior</p>
+            </div>
+            <div class="kpi-card" id="kpi-defesas">
+                <h3>Defesas por Jogo</h3>
+                <p class="kpi-value">--</p>
+                <p class="kpi-comparison">-- vs ano anterior</p>
+            </div>
+            <div class="kpi-card" id="kpi-posse">
+                <h3>Posse de Bola</h3>
+                <p class="kpi-value">--%</p>
+                <p class="kpi-comparison">-- vs ano anterior</p>
+            </div>
+        </div>
 
-    <div id="kpi-container" class="kpi-grid" style="display: none;">
-    <div class="kpi-card" id="kpi-passes">
-        <h3>Precisão de Passes</h3>
-        <p class="kpi-value">--%</p>
-        <p class="kpi-comparison">-- vs ano anterior</p>
-    </div>
-    <div class="kpi-card" id="kpi-defesas">
-        <h3>Defesas por Jogo</h3>
-        <p class="kpi-value">--</p>
-        <p class="kpi-comparison">-- vs ano anterior</p>
-    </div>
-    <div class="kpi-card" id="kpi-posse">
-        <h3>Posse de Bola</h3>
-        <p class="kpi-value">--%</p>
-        <p class="kpi-comparison">-- vs ano anterior</p>
-    </div>
-</div>
+        <div class="grid-container">                                
+            <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+                <div class="tabs-nav">
+                    <button class="tab-button active" data-target="#performance-tab">Desempenho (Casa/Fora)</button>
+                    <button class="tab-button" data-target="#conversion-rate-tab">Eficiência Ofensiva</button>
+                    <button class="tab-button" data-target="#clean-sheets-tab">Jogos Sem Sofrer Gol</button>
+                    <button class="tab-button" data-target="#scatter-plot-tab">Estilo de Jogo (Posse vs Gols)</button>                
+                </div>
 
-
-    <div class="grid-container">
-                                
-        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+                <div class="tabs-content">
+                    <div id="performance-tab" class="tab-pane active">
+                        <div id="home-away-chart"></div> </div>
+                    <div id="clean-sheets-tab" class="tab-pane">
+                        <div id="clean-sheet-chart"></div> </div>
+                    <div id="conversion-rate-tab" class="tab-pane">
+                        <div id="conversion-rate-chart"></div> </div>
+                    <div id="scatter-plot-tab" class="tab-pane">
+                        <div id="scatter-plot-chart"></div> </div>    
+                </div>
+                <div id="team-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                    <h3>Chances Criadas</h3>
+                    <div style="display: flex; justify-content: space-around; gap: 20px;">
+                        <div id="pie-chart-base" class="chart-container"></div>
+                        <div id="pie-chart-comparison" class="chart-container"></div>
+                    </div>
+                </div>
+                <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                    <h3>Gols Sofridos Dentro e Fora de Casa</h3>
+                    <div style="display: flex; justify-content: space-around; gap: 20px;">
+                        <div id="defense-detail-base" class="chart-container"></div>
+                        <div id="defense-detail-comparison" class="chart-container"></div>
+                    </div>
+                </div>
+                <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                    <h3>Gols Marcados Dentro e Fora de Casa</h3>
+                    <div style="display: flex; justify-content: space-around; gap: 20px;">
+                        <div id="goals-detail-base" class="chart-container"></div>
+                        <div id="goals-detail-comparison" class="chart-container"></div>
+                    </div>
+                </div>
+            </section>
+            <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <div class="tabs-nav">
-                <button class="tab-button active" data-target="#performance-tab">Desempenho (Casa/Fora)</button>
-                <button class="tab-button" data-target="#conversion-rate-tab">Eficiência Ofensiva</button>
-                <button class="tab-button" data-target="#clean-sheets-tab">Jogos Sem Sofrer Gol</button>
-                <button class="tab-button" data-target="#scatter-plot-tab">Estilo de Jogo (Posse vs Gols)</button>                
-            </div>
-
-            <div class="tabs-content">
-                <div id="performance-tab" class="tab-pane active">
-                    <div id="home-away-chart"></div> </div>
-                <div id="clean-sheets-tab" class="tab-pane">
-                    <div id="clean-sheet-chart"></div> </div>
-                <div id="conversion-rate-tab" class="tab-pane">
-                    <div id="conversion-rate-chart"></div> </div>
-                <div id="scatter-plot-tab" class="tab-pane">
-                    <div id="scatter-plot-chart"></div> </div>    
-            </div>
-            <div id="team-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
-                <h3>Chances Criadas</h3>
-                <div style="display: flex; justify-content: space-around; gap: 20px;">
-                    <div id="pie-chart-base" class="chart-container"></div>
-                    <div id="pie-chart-comparison" class="chart-container"></div>
-                </div>
-            </div>
-            <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
-                <h3>Gols Sofridos Dentro e Fora de Casa</h3>
-                <div style="display: flex; justify-content: space-around; gap: 20px;">
-                    <div id="defense-detail-base" class="chart-container"></div>
-                    <div id="defense-detail-comparison" class="chart-container"></div>
-                </div>
-            </div>
-            <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
-                <h3>Gols Marcados Dentro e Fora de Casa</h3>
-                <div style="display: flex; justify-content: space-around; gap: 20px;">
-                    <div id="goals-detail-base" class="chart-container"></div>
-                    <div id="goals-detail-comparison" class="chart-container"></div>
-                </div>
-            </div>
-        </section>
-        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-        <div class="tabs-nav">
-                <button class="tab-button active" data-target="#stacked-area-tab">Porcentagem de Resultados</button>
-                <button class="tab-button" data-target="#media-gols-tab">Média de Gols Entre Temporadas</button>
-                <button class="tab-button" data-target="#heatmap-tab">Heatmap de Disciplina</button>                
-                <button class="tab-button" data-target="#chord-diagram-tab">Fluxo de Vitórias</button>                
-            </div>
-
-            <div class="tabs-content">
-                <div id="stacked-area-tab" class="tab-pane active">
-                    <div id="stacked-area-chart"></div> </div>
-                <div id="heatmap-tab" class="tab-pane">
-                    <div class="heatmap-toggle">
-                        <button id="heatmap-faltas-btn" class="active">Faltas</button>
-                        <button id="heatmap-cartoes-btn">Cartões</button>
-                    </div>
-                    <div id="heatmap-chart"></div>
-                </div>
-                <div id="media-gols-tab" class="tab-pane">
-                    <div id="multi-line-chart"></div> </div>
-                <div id="chord-diagram-tab" class="tab-pane">
-                    <div id="chord-diagram-chart"></div> </div>    
-            </div>
-        </section>         
-         
-        <section class="chart-container" style="grid-column: 1 / -1;">
-            <h2>Distribuição de Jogadores por Nacionalidade</h2>
-            <div id="bubble-map-chart"></div>
-            <div id="nationality-details-panel" class="chart-container" style="display: none; grid-column: 1 / -1;">
-                <h3 id="nationality-details-title">Jogadores</h3>
-                <div id="nationality-details-list"></div>                
-            </div>
-        </section>    
-
-        <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
-            <div class="tabs-nav">
-                <button class="tab-button active" data-target="#artilheiros-tab">Artilheiros</button>
-                <button class="tab-button" data-target="#assistencias-tab">Assistências</button>
-                <button class="tab-button" data-target="#participacoes-tab">Participações em Gol</button>
-                <button class="tab-button" data-target="#disciplina-tab">Disciplina</button>
-                <button class="tab-button" data-target="#goleiros-scatter-tab">Goleiros (Volume vs Eficiência)</button>
-                <button class="tab-button" data-target="#gol-minuto-tab">Minutos por Gol</button>
-            </div>
-
-            <div class="tabs-content">
-                <div id="artilheiros-tab" class="tab-pane active">
-                    </div>
-                <div id="assistencias-tab" class="tab-pane">
-                    </div>
-                <div id="participacoes-tab" class="tab-pane">
-                    </div>
-                <div id="disciplina-tab" class="tab-pane">
-                    </div>
-                <div id="goleiros-scatter-tab" class="tab-pane">
-                    </div>
-                <div id="gol-minuto-tab" class="tab-pane">
-                    <div id="histogram-chart"></div>
-                    <div id="histogram-details"></div>
-                    </div>    
-            </div>
-        </section>
-        <section id="player-details-panel" class="chart-container" style="grid-column: 1 / -1; display: none; position: relative;">
-            <span id="details-close-btn" style="position: absolute; top: 15px; right: 20px; font-size: 24px; font-weight: bold; cursor: pointer;">&times;</span>
-            
-            <div style="display: flex; gap: 30px; align-items: center; width: 100%;">
-                
-                <div style="text-align: center; flex-basis: 200px; flex-shrink: 0;">
-                    <img id="player-photo-details" style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid #eee;" src="" alt="Foto do Jogador">
-                    <h2 id="player-name-details" style="margin-top: 10px; margin-bottom: 5px; font-size: 1.2em;">Nome do Jogador</h2>
-                    <img id="team-logo-details" style="width: 40px; height: 40px; object-fit: contain;" src="" alt="Logo do Time">
-                </div>
-                
-                <div style="flex-grow: 1;">
-                    <div id="radar-chart-details"></div>
+                    <button class="tab-button active" data-target="#stacked-area-tab">Porcentagem de Resultados</button>
+                    <button class="tab-button" data-target="#media-gols-tab">Média de Gols Entre Temporadas</button>
+                    <button class="tab-button" data-target="#heatmap-tab">Heatmap de Disciplina</button>                
+                    <button class="tab-button" data-target="#chord-diagram-tab">Fluxo de Vitórias</button>                
                 </div>
 
-                <div id="radar-stats-list" style="flex-basis: 250px; flex-shrink: 0;">
+                <div class="tabs-content">
+                    <div id="stacked-area-tab" class="tab-pane active">
+                        <div id="stacked-area-chart"></div> </div>
+                    <div id="heatmap-tab" class="tab-pane">
+                        <div class="heatmap-toggle">
+                            <button id="heatmap-faltas-btn" class="active">Faltas</button>
+                            <button id="heatmap-cartoes-btn">Cartões</button>
+                        </div>
+                        <div id="heatmap-chart"></div>
                     </div>
-
-            </div>
-        </section>      
-               
-        <section class="chart-container" style="grid-column: 1 / -1;"> 
-            <h2>Tabela do Campeonato</h2>            
-            <div id="tabela-campeonato-table"></div>
-        </section>
+                    <div id="media-gols-tab" class="tab-pane">
+                        <div id="multi-line-chart"></div> </div>
+                    <div id="chord-diagram-tab" class="tab-pane">
+                        <div id="chord-diagram-chart"></div> </div>    
+                </div>
+            </section>
+            <section class="chart-container" style="grid-column: 1 / -1;"> 
+                <h2>Tabela do Campeonato</h2>            
+                <div id="tabela-campeonato-table"></div>
+            </section>
+        </div>
     </div>
 
+
+    <div id="players-view" class="view">
+        <h1>Dashboard de Análise de Jogadores</h1>
+        <div class="grid-container"> 
+            <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+                <div class="tabs-nav">
+                    <button class="tab-button active" data-target="#artilheiros-tab">Artilheiros</button>
+                    <button class="tab-button" data-target="#assistencias-tab">Assistências</button>
+                    <button class="tab-button" data-target="#participacoes-tab">Participações em Gol</button>
+                    <button class="tab-button" data-target="#disciplina-tab">Disciplina</button>
+                    <button class="tab-button" data-target="#goleiros-scatter-tab">Goleiros (Volume vs Eficiência)</button>
+                    <button class="tab-button" data-target="#gol-minuto-tab">Minutos por Gol</button>
+                </div>
+
+                <div class="tabs-content">
+                    <div id="artilheiros-tab" class="tab-pane active">
+                        </div>
+                    <div id="assistencias-tab" class="tab-pane">
+                        </div>
+                    <div id="participacoes-tab" class="tab-pane">
+                        </div>
+                    <div id="disciplina-tab" class="tab-pane">
+                        </div>
+                    <div id="goleiros-scatter-tab" class="tab-pane">
+                        </div>
+                    <div id="gol-minuto-tab" class="tab-pane">
+                        <div id="histogram-chart"></div>
+                        <div id="histogram-details"></div>
+                        </div>    
+                </div>
+            </section>
+            <section id="player-details-panel" class="chart-container" style="grid-column: 1 / -1; display: none; position: relative;">
+                <span id="details-close-btn" style="position: absolute; top: 15px; right: 20px; font-size: 24px; font-weight: bold; cursor: pointer;">&times;</span>
+                
+                <div style="display: flex; gap: 30px; align-items: center; width: 100%;">
+                    
+                    <div style="text-align: center; flex-basis: 200px; flex-shrink: 0;">
+                        <img id="player-photo-details" style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid #eee;" src="" alt="Foto do Jogador">
+                        <h2 id="player-name-details" style="margin-top: 10px; margin-bottom: 5px; font-size: 1.2em;">Nome do Jogador</h2>
+                        <img id="team-logo-details" style="width: 40px; height: 40px; object-fit: contain;" src="" alt="Logo do Time">
+                    </div>
+                    
+                    <div style="flex-grow: 1;">
+                        <div id="radar-chart-details"></div>
+                    </div>
+
+                    <div id="radar-stats-list" style="flex-basis: 250px; flex-shrink: 0;">
+                        </div>
+
+                </div>
+            </section>
+            <section class="chart-container" style="grid-column: 1 / -1;">
+                <h2>Distribuição de Jogadores por Nacionalidade</h2>
+                <div id="bubble-map-chart"></div>
+                <div id="nationality-details-panel" class="chart-container" style="display: none; grid-column: 1 / -1;">
+                    <h3 id="nationality-details-title">Jogadores</h3>
+                    <div id="nationality-details-list"></div>                
+                </div>
+            </section>           
+        </div> 
+    </div> 
     <footer class="footer">
-
         <div class="div-footer">
             <div class="div-footer-1">
                 <div class="div-footer-1-coluna">

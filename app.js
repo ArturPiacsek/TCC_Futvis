@@ -36,27 +36,30 @@ function updateAllVisualizations() {
     hideTeamDefenseComparisonPanel();
     hideTeamGoalsComparisonPanel();
     hideNationalityDetails();
-
-    const faltasBtn = document.getElementById('heatmap-faltas-btn');
-    const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
-    if (faltasBtn && cartoesBtn) {
-        faltasBtn.classList.add('active');
-        cartoesBtn.classList.remove('active');
+    updateHighlightColor();
+    updateKpis();                 
+    
+    if (document.getElementById('teams-view').classList.contains('active')) {        
+        loadTemporalAnalysisCharts();
+        loadHomeAwayChart();
+        loadCleanSheetChart();
+        loadConversionRateChart();
+        loadChordDiagram();
+        loadScatterPlot();
+        const faltasBtn = document.getElementById('heatmap-faltas-btn');
+        const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
+        if (faltasBtn && cartoesBtn) {
+            faltasBtn.classList.add('active');
+            cartoesBtn.classList.remove('active');
+        } 
+        loadHeatmap();        
+        fetchTabelaCampeonato();
+    } else {        
+        updatePlayerCharts();
+        loadGoalkeeperAnalysis();
+        loadBubbleMap();
+        loadHistogram();        
     }
-    updateHighlightColor(); 
-    updatePlayerCharts();
-    fetchTabelaCampeonato();
-    loadTemporalAnalysisCharts();
-    updateKpis();
-    loadBubbleMap();
-    loadHistogram();
-    loadScatterPlot();
-    loadGoalkeeperAnalysis();
-    loadChordDiagram();
-    loadHeatmap();
-    loadConversionRateChart();
-    loadCleanSheetChart();
-    loadHomeAwayChart();      
 }
 
 // ----- Atualiza todos os gráficos de jogadores com base nos filtros selecionados. -----
@@ -2377,7 +2380,20 @@ function updateHighlightColor() {
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
     initStickyNavbar(); // Carrega o navbar
-    updateAllVisualizations(); // Esta função agora carrega TUDO
+    loadTemporalAnalysisCharts();
+        loadHomeAwayChart();
+        loadCleanSheetChart();
+        loadConversionRateChart();
+        loadChordDiagram();
+        loadScatterPlot();
+        const faltasBtn = document.getElementById('heatmap-faltas-btn');
+        const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
+        if (faltasBtn && cartoesBtn) {
+            faltasBtn.classList.add('active');
+            cartoesBtn.classList.remove('active');
+        } 
+        loadHeatmap();        
+        fetchTabelaCampeonato();
 
     document.getElementById('details-close-btn').addEventListener('click', hidePlayerDetails);
 
@@ -2412,6 +2428,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetPane.classList.add("active");
             }
         });
+    });   
+
+    const showTeamsBtn = document.getElementById('show-teams-btn');
+    const showPlayersBtn = document.getElementById('show-players-btn');
+    const teamsView = document.getElementById('teams-view');
+    const playersView = document.getElementById('players-view');
+
+    showTeamsBtn.addEventListener('click', () => {
+        // 1. Verifica se a página já está ativa para não recarregar sem necessidade
+        if (teamsView.classList.contains('active')) return;
+
+        // 2. Troca as classes 'active' para mudar a visibilidade
+        showTeamsBtn.classList.add('active');
+        showPlayersBtn.classList.remove('active');
+        teamsView.classList.add('active');
+        playersView.classList.remove('active');
+
+        // 3. CHAMA A ATUALIZAÇÃO para carregar os gráficos da nova página
+        updateAllVisualizations();
+    });
+
+    showPlayersBtn.addEventListener('click', () => {
+        // 1. Verifica se a página já está ativa
+        if (playersView.classList.contains('active')) return;
+
+        // 2. Troca as classes 'active'
+        showPlayersBtn.classList.add('active');
+        showTeamsBtn.classList.remove('active');
+        playersView.classList.add('active');
+        teamsView.classList.remove('active');
+
+        // 3. CHAMA A ATUALIZAÇÃO para carregar os gráficos de jogadores
+        updateAllVisualizations();
     });
 
     // Menu lateral colapsável dos filtros

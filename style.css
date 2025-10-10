@@ -271,39 +271,7 @@
         }
         .tns-nav button.tns-nav-active {
             background: #007bff;
-        }
-
-        /* Menu de Navegação */
-        .navbar {
-            background-color: var(--cor-destaque);
-            padding: 10px 20px;
-            font-family: "Montserrat", sans-serif;
-        }
-        .navbar ul {
-            list-style: none;
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin: 0;
-            padding: 0;
-        }
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.3;
-        }
-        .navbar a:hover {
-            color: #CCCCCC;
-        }
-        .navbar-sticky {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 999;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3)
-        }
+        }       
 
         /* Sidebar com os filtros */
         .sidebar-filtros {
@@ -409,4 +377,39 @@
             --cor-titulo: #f5f5f5;
             --cor-destaque: var(--azul);
             --cor-secundaria: #87cefa;
+        }
+
+        .main-nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .nav-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: transparent;
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .nav-button:hover {
+            background-color: #e9ecef;
+        }
+        .nav-button.active {
+            background-color: var(--cor-destaque);
+            color: white;
+        }
+
+        /* Lógica de visibilidade das "páginas" */
+        .view {
+            display: none; /* Esconde todas as visualizações por padrão */
+        }
+        .view.active {
+            display: block; /* Mostra apenas a que tiver a classe 'active' */
         }
