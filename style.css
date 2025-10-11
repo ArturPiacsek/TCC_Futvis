@@ -413,3 +413,41 @@
         .view.active {
             display: block; /* Mostra apenas a que tiver a classe 'active' */
         }
+        #player-comparison-container {
+            display: flex; /* Usa flexbox para alinhar os cards lado a lado */
+            flex-wrap: wrap; /* Permite que os cards quebrem para a próxima linha se não houver espaço */
+            gap: 20px; /* Espaço entre os cards */
+            justify-content: center; /* Centraliza os cards no contêiner */
+        }
+
+        .player-comparison-card {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            flex: 1; /* Permite que o card se expanda */
+            min-width: 650px; /* Aumenta a largura mínima do card */
+            max-width: 800px; /* Aumenta a largura máxima para dar mais espaço */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .details-close-btn {
+            position: absolute;
+            top: 5px;   /* Ajuste para mover mais para cima */
+            right: 10px; /* Ajuste para mover mais para a direita ou esquerda se necessário */
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #888;
+            z-index: 10; /* Garante que ele fique acima de outros elementos */
+        }
+        .details-close-btn:hover {
+            color: #333;
+        }
+        .team-logo-details {
+            width: 40px;
+            height: 40px;
+            /* object-fit garante que a imagem caiba sem distorcer */
+            object-fit: contain; 
+        }

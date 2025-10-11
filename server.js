@@ -258,6 +258,7 @@ app.get('/api/disciplina', async (req, res) => {
 
         sql += `
             GROUP BY j.id_jogador, j.nome_jogador, t.logo_url_time
+            HAVING SUM(f.cartoes_amarelos) > 0 
             ORDER BY amarelos DESC, vermelhos DESC
             LIMIT 20;
         `;

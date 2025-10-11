@@ -29,9 +29,14 @@ const coresTimes = {
     '26': { primary: '#FFD200', secondary: '#066334' }, // Cuiabá
 }
 
+let comparedPlayers = [];
+const MAX_COMPARISONS = 2; // Definimos o máximo de 2 jogadores para comparação
+
 // ----- Função que é chamada QUANDO QUALQUER FILTRO MUDA.  -----
 function updateAllVisualizations() {
-    hidePlayerDetails();
+    if (comparedPlayers.length > 0) {
+        refreshComparisonCards(); // ATUALIZA os cards existentes
+    }
     hideTeamComparisonPanel();
     hideTeamDefenseComparisonPanel();
     hideTeamGoalsComparisonPanel();
@@ -840,7 +845,7 @@ function createBarChart(data, selector, yAxisLabel, xKey, yKey) {
         .attr("height", d => height - yScale(+d[yKey]))
         .style("cursor", "pointer") // Adiciona o cursor de clique
         .on("click", (event, d) => {
-            showPlayerDetails(d); // 'd' contém id_jogador, nome, etc.
+            addPlayerToComparison(d); // 'd' contém id_jogador, nome, etc.
         })
         
         //EVENTOS DE MOUSE (TOOLTIP)
@@ -1448,7 +1453,7 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
         .attr("width", xScale.bandwidth())
         .style("cursor", "pointer") // Adiciona o cursor de clique
         .on("click", (event, d) => {
-            showPlayerDetails(d.data); // d.data contém o objeto original do jogador
+           addPlayerToComparison(d.data);  // d contém o objeto original do jogador
         })
         // 6. Adicionar interatividade de mouseover
         .on("mouseover", function(event, d) {
@@ -1509,7 +1514,7 @@ function createGoalkeeperBarChart(data) {
         .attr("width", d => xScale(+d.pct_defesas))
         .style("cursor", "pointer")
         .on("click", (event, d) => {
-            showGoalkeeperDetails(d, data); // Passa o goleiro clicado e todos os dados
+            addPlayerToComparison(d); // Passa o goleiro clicado e todos os dados
         })
         .on("mouseover", (event, d) => {
             tooltip.style("opacity", 1).html(`
@@ -1565,7 +1570,7 @@ function createGoalkeeperScatterPlot(data, selector) {
         .attr("referrerpolicy", "no-referrer")
         .style("cursor", "pointer")
         .on("click", (event, d) => {
-            showGoalkeeperDetails(d, data); // Passa o goleiro clicado e todos os dados
+            addPlayerToComparison(d); // Passa o goleiro clicado e todos os dados
         })
         .on("mouseover", (event, d) => {
             tooltip.style("opacity", 1).html(`
@@ -1665,41 +1670,92 @@ function createScatterPlot(data) {
         });
 }
 
-// ----- Função para mostrar estatisticas dos jogadores -----
-function showPlayerDetails(playerData) {
-    const selectedTempoId = document.querySelector('#temporada-filter').value;
-    const tempoQueryParam = selectedTempoId ? `?id_tempo=${selectedTempoId}` : '';
-    const panel = document.getElementById('player-details-panel');
-
-    document.getElementById('player-name-details').textContent = 'Carregando...';
-    document.getElementById('player-photo-details').src = '';
-    document.getElementById('team-logo-details').src = '';
-    d3.select("#radar-chart-details").html("");
-    d3.select("#radar-stats-list").html("");
-    panel.style.display = 'block';
-
-    fetch(`${API_BASE_URL}/jogador-detalhes/${playerData.id_jogador}${tempoQueryParam}`)
-        .then(res => res.json())
-        .then(details => {
-            if (details) {
-                document.getElementById('player-name-details').textContent = details.nome_jogador;
-                document.getElementById('player-photo-details').src = details.logo_url_jogador;
-                document.getElementById('team-logo-details').src = details.logo_url_time;
-                
-                // Chama as duas funções de exibição
-                createRadarChart(details, "#radar-chart-details");
-                displayRadarStatsList(details);
-
-                panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        })
-        .catch(error => console.error('Erro ao buscar detalhes do jogador:', error));
+/**
+ * Gerencia a adição de um jogador ao painel de comparação.
+ * @param {object} playerData - Os dados do jogador clicado.
+ */
+function addPlayerToComparison(playerData) {
+    // 1. Verifica se o jogador já está na lista
+    if (comparedPlayers.some(p => p.id_jogador === playerData.id_jogador)) {
+        console.log("Este jogador já está na comparação.");
+        return; // Sai da função
+    }
+    // 2. Garante que não excedemos o limite
+    if (comparedPlayers.length >= MAX_COMPARISONS) {
+        // Remove o jogador mais recente para dar lugar ao novo, da pra remover o mais antigo com .shift
+        comparedPlayers.pop();
+    }
+    // 3. Adiciona o novo jogador à lista
+    comparedPlayers.push(playerData);
+    // 4. Renderiza novamente todo o painel de comparação
+    renderComparisonPanel();
 }
 
-// ----- Esconde o painel de detalhes. -----
-function hidePlayerDetails() {
-    document.getElementById('player-details-panel').style.display = 'none';
+/**
+ * Limpa a seleção e esconde o painel de comparação.
+ */
+function clearComparison() {
+    comparedPlayers = [];
+    const panel = document.getElementById('player-comparison-container');
+    panel.innerHTML = '';
+    panel.style.display = 'none';
 }
+
+/**
+ * Renderiza todos os cards de jogadores na lista 'comparedPlayers'.
+ */
+function renderComparisonPanel() {
+    const container = document.getElementById('player-comparison-container');
+    container.innerHTML = ''; // Limpa o contêiner antes de redesenhar
+
+    if (comparedPlayers.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'flex'; // Garante que o contêiner está visível
+
+    // Para cada jogador na lista, cria um card
+    comparedPlayers.forEach(player => {
+        createPlayerCard(player, container);
+    });
+
+    // Rola a tela para o painel de comparação
+    container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+
+function createPlayerCard(playerData, container) {
+    // 1. Pega o template do HTML
+    const template = document.getElementById('player-card-template');
+    
+    // 2. Clona o conteúdo do template para criar um novo card
+    const cardClone = template.content.cloneNode(true);
+    
+    // 3. Pega o elemento principal do card que acabamos de clonar
+    const cardElement = cardClone.querySelector('.player-comparison-card');
+    
+    // 4. Define IDs únicos no card e nos containers dos gráficos (necessário para o D3)
+    const cardIdSuffix = playerData.id_jogador;
+    cardElement.id = `card-${cardIdSuffix}`;
+    cardElement.querySelector('.radar-chart-container').id = `radar-chart-${cardIdSuffix}`;
+    cardElement.querySelector('.radar-stats-list').id = `radar-stats-${cardIdSuffix}`;
+
+    // 5. Adiciona o evento de fechar
+    const closeBtn = cardElement.querySelector('.details-close-btn');
+    closeBtn.dataset.playerId = playerData.id_jogador; // Adiciona o ID para saber quem remover
+    closeBtn.addEventListener('click', () => {
+        comparedPlayers = comparedPlayers.filter(p => p.id_jogador !== playerData.id_jogador);
+        renderComparisonPanel();
+    });
+
+    // 6. Adiciona o card clonado e preenchido ao contêiner principal
+    container.appendChild(cardElement);
+
+    // 7. Chama a função para buscar os dados e preencher o conteúdo do card
+    updateCardContent(playerData, cardElement);
+}
+
 
 // ----- Cria o Radar Chart com os dados do jogador. -----
 function createRadarChart(playerData, selector) {
@@ -1707,7 +1763,7 @@ function createRadarChart(playerData, selector) {
     container.html("");
 
     const margin = { top: 50, right: 50, bottom: 50, left: 50 };
-    const width = 400 - margin.left - margin.right;
+    const width = 300 - margin.left - margin.right;
     const height = 300 - margin.top - margin.bottom;
     const radius = Math.min(width, height) / 2;
 
@@ -1749,8 +1805,8 @@ function createRadarChart(playerData, selector) {
 }
 
 // ----- Popula a lista de estatísticas ao lado do Radar Chart -----
-function displayRadarStatsList(playerData) {
-    const container = d3.select("#radar-stats-list");
+function displayRadarStatsList(playerData, selector) {
+    const container = d3.select(selector);
     container.html("");
 
     const safeDivide = (n, d) => {
@@ -1798,13 +1854,12 @@ function displayRadarStatsList(playerData) {
 }
 
 // ----- Cria o Radar Chart específico para GOLEIROS. -----
-function createGoalkeeperRadarChart(gkData, maxValues) {
-    const selector = "#radar-chart-details";
+function createGoalkeeperRadarChart(gkData, maxValues, selector) {    
     const container = d3.select(selector);
     container.html("");
     
     const margin = { top: 50, right: 50, bottom: 50, left: 50 };
-    const width = 400 - margin.left - margin.right;
+    const width = 300 - margin.left - margin.right;
     const height = 300 - margin.top - margin.bottom;
     const radius = Math.min(width, height) / 2;
 
@@ -1853,8 +1908,8 @@ function createGoalkeeperRadarChart(gkData, maxValues) {
 }
 
 // ----- Popula a lista de estatísticas específica para GOLEIROS. -----
-function displayGoalkeeperStatsList(gkData, maxValues) {
-    const container = d3.select("#radar-stats-list");
+function displayGoalkeeperStatsList(gkData, maxValues, selector) {
+    const container = d3.select(selector);
     container.html("");
 
     const safeDivide = (n, d) => (d ? n / d : 0);
@@ -1882,32 +1937,6 @@ function displayGoalkeeperStatsList(gkData, maxValues) {
         const barContainer = listItem.append("div").attr("class", "stat-bar-container");
         barContainer.append("div").attr("class", "stat-bar").style("width", "0%").transition().duration(500).style("width", `${percentage}%`);
     });
-}
-
-// ----- Prepara os dados e exibe o painel de detalhes para um goleiro. -----
-function showGoalkeeperDetails(clickedGkData, allGkData) {
-    const panel = document.getElementById('player-details-panel');
-
-    // Calcula os valores máximos a partir do dataset completo
-    const maxValues = {
-        max_nota: d3.max(allGkData, d => +d.nota),
-        max_pct_defesas: d3.max(allGkData, d => +d.pct_defesas),
-        max_defesas_p90: d3.max(allGkData, d => +d.defesas_p90),
-        max_defesas: d3.max(allGkData, d => +d.defesas),
-        max_gols_sofridos: d3.max(allGkData, d => +d.gols_sofridos)
-    };
-
-    // Popula o cabeçalho do painel
-    document.getElementById('player-name-details').textContent = clickedGkData.nome_jogador;
-    document.getElementById('player-photo-details').src = clickedGkData.logo_url_jogador;
-    document.getElementById('team-logo-details').src = clickedGkData.logo_url_time;
-    panel.style.display = 'block';
-
-    // Chama as funções de desenho específicas para goleiros
-    createGoalkeeperRadarChart(clickedGkData, maxValues);
-    displayGoalkeeperStatsList(clickedGkData, maxValues);
-
-    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // ----- Função para criar diagrama de acordes -----
@@ -2376,26 +2405,121 @@ function updateHighlightColor() {
     document.documentElement.style.setProperty('--cor-secundaria', teamColors.secondary);
 }
 
+/**
+ * Atualiza os dados de todos os jogadores atualmente no painel de comparação.
+ */
+function refreshComparisonCards() {
+    if (comparedPlayers.length === 0) return;
+    comparedPlayers.forEach(player => {
+        const cardElement = document.getElementById(`card-${player.id_jogador}`);
+        if (cardElement) {
+            // Apenas chama a função de atualização
+            updateCardContent(player, cardElement);
+        }
+    });
+}
+
+/**
+ * Busca os dados de um jogador e preenche o conteúdo de um card existente, 
+ * usando seletores de classe para encontrar os elementos dentro do card.
+ * @param {object} playerData - Dados básicos do jogador (pelo menos id_jogador).
+ * @param {HTMLElement} cardElement - O elemento do card (o <div class="player-comparison-card">) a ser atualizado.
+ */
+function updateCardContent(playerData, cardElement) {
+    // Pega os IDs únicos dos containers dos gráficos, que foram definidos em createPlayerCard
+    const radarChartContainer = cardElement.querySelector('.radar-chart-container');
+    const radarStatsContainer = cardElement.querySelector('.radar-stats-list');
+    const radarChartId = radarChartContainer.id;
+    const radarStatsId = radarStatsContainer.id;
+
+    const selectedTempoId = document.querySelector('#temporada-filter').value;
+    const tempoQueryParam = selectedTempoId ? `?id_tempo=${selectedTempoId}` : '';
+    
+    const isGoalkeeper = playerData.hasOwnProperty('pct_defesas'); 
+    
+    if (isGoalkeeper) {
+        // Ignora o filtro de time para goleiros, buscando apenas pela temporada
+        const queryParams = [];
+        if (selectedTempoId) {
+            queryParams.push(`id_tempo=${selectedTempoId}`);
+        }
+        const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+        fetch(`${API_BASE_URL}/analise-goleiros${queryString}`)
+            .then(res => res.json())
+            .then(allGkData => {
+                const updatedGkData = allGkData.find(gk => gk.id_jogador === playerData.id_jogador);
+                
+                if (updatedGkData) {
+                    const playerIndex = comparedPlayers.findIndex(p => p.id_jogador === playerData.id_jogador);
+                    if (playerIndex !== -1) {
+                        comparedPlayers[playerIndex] = updatedGkData;
+                    }
+
+                    const maxValues = {
+                        max_nota: d3.max(allGkData, d => +d.nota),
+                        max_pct_defesas: d3.max(allGkData, d => +d.pct_defesas),
+                        max_defesas_p90: d3.max(allGkData, d => +d.defesas_p90),
+                        max_defesas: d3.max(allGkData, d => +d.defesas),
+                        max_gols_sofridos: d3.max(allGkData, d => +d.gols_sofridos)
+                    };
+                                        
+                    cardElement.querySelector('.player-name').textContent = updatedGkData.nome_jogador;
+                    cardElement.querySelector('.player-photo').src = updatedGkData.logo_url_jogador || '';
+                    cardElement.querySelector('.team-logo-details').src = updatedGkData.logo_url_time;
+                    
+                    // As funções de gráfico continuam usando o seletor de ID único
+                    createGoalkeeperRadarChart(updatedGkData, maxValues, `#${radarChartId}`);
+                    displayGoalkeeperStatsList(updatedGkData, maxValues, `#${radarStatsId}`);
+                } else {
+                    cardElement.querySelector('.player-name').textContent = playerData.nome_jogador;
+                    cardElement.querySelector('.player-photo').src = '';
+                    cardElement.querySelector('.team-logo-details').src = '';
+                    radarChartContainer.innerHTML = `<div style="text-align:center; padding: 20px;">Jogador não encontrado para os filtros selecionados.</div>`;
+                    radarStatsContainer.innerHTML = '';
+                }
+            });
+    } else {
+        // Lógica para jogadores de linha
+        fetch(`${API_BASE_URL}/jogador-detalhes/${playerData.id_jogador}${tempoQueryParam}`)
+            .then(res => res.json())
+            .then(details => {
+                 if (details && details.nome_jogador) {                    
+                    cardElement.querySelector('.player-name').textContent = details.nome_jogador;
+                    cardElement.querySelector('.player-photo').src = details.logo_url_jogador;
+                    cardElement.querySelector('.team-logo-details').src = details.logo_url_time;
+                    
+                    createRadarChart(details, `#${radarChartId}`);
+                    displayRadarStatsList(details, `#${radarStatsId}`);
+                 } else {
+                    cardElement.querySelector('.player-name').textContent = playerData.nome_jogador;
+                    cardElement.querySelector('.player-photo').src = '';
+                    cardElement.querySelector('.team-logo-details').src = '';
+                    radarChartContainer.innerHTML = `<div style="text-align:center; padding: 20px;">Jogador não encontrado para os filtros selecionados.</div>`;
+                    radarStatsContainer.innerHTML = '';
+                 }
+            });
+    }
+}
+
 // ----- INICIALIZAÇÃO DA PÁGINA -----
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
     initStickyNavbar(); // Carrega o navbar
     loadTemporalAnalysisCharts();
-        loadHomeAwayChart();
-        loadCleanSheetChart();
-        loadConversionRateChart();
-        loadChordDiagram();
-        loadScatterPlot();
-        const faltasBtn = document.getElementById('heatmap-faltas-btn');
-        const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
-        if (faltasBtn && cartoesBtn) {
+    loadHomeAwayChart();
+    loadCleanSheetChart();
+    loadConversionRateChart();
+    loadChordDiagram();
+    loadScatterPlot();
+    const faltasBtn = document.getElementById('heatmap-faltas-btn');
+    const cartoesBtn = document.getElementById('heatmap-cartoes-btn');
+    if (faltasBtn && cartoesBtn) {
             faltasBtn.classList.add('active');
             cartoesBtn.classList.remove('active');
         } 
-        loadHeatmap();        
-        fetchTabelaCampeonato();
-
-    document.getElementById('details-close-btn').addEventListener('click', hidePlayerDetails);
+    loadHeatmap();        
+    fetchTabelaCampeonato();   
 
     // O evento de 'change' para o filtro de time já chama a função correta
     document.querySelector('#time-filter').addEventListener('change', updateAllVisualizations);
@@ -2408,8 +2532,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tabButtons.forEach(button => {
         button.addEventListener("click", () => {
-            // APRIMORAMENTO: Esconde todos os painéis de detalhe ao trocar de aba
-            hidePlayerDetails();
+            clearComparison(); 
             hideTeamComparisonPanel();
             hideTeamDefenseComparisonPanel();
             hideTeamGoalsComparisonPanel();
