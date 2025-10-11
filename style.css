@@ -219,8 +219,7 @@
             margin-bottom: 10px;
         }
         .pie-header img {
-            width: 50px;
-            height: 50px;
+            width: 50px;            
         }
         .pie-header h4 {
             margin: 5px 0 0 0;
@@ -450,4 +449,68 @@
             height: 40px;
             /* object-fit garante que a imagem caiba sem distorcer */
             object-fit: contain; 
+        }
+        /* Container principal dos gráficos como referência de posição */
+        .chart-container {
+            position: relative;
+        }
+
+        /* Container do ícone e tooltip, posicionado no canto superior direito */
+        .info-tooltip-container {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+        }
+
+        /* Estilo para o container do ícone (agora com SVG) */
+        .info-icon {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cor-destaque); /* Cor principal do ícone */
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .info-icon:hover {
+            transform: scale(1.1); /* Efeito sutil ao passar o mouse */
+        }
+
+        /* Posição ajustada para aparecer à DIREITA do ícone */
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 0.85rem;           
+            position: absolute;
+            z-index: 1;
+            top: 50%;
+            left: calc(100% + 12px); /* 100% para chegar ao fim do ícone + 12px de espaço */
+            transform: translateY(-50%); /* Centraliza verticalmente */
+
+            transition: opacity 0.3s;
+        }
+
+        /* A seta aponta para a ESQUERDA */
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 100%; /* Posiciona no lado esquerdo do tooltip */
+            margin-top: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent #333 transparent transparent; /* Seta apontando para a esquerda */
+        }
+
+        /* Lógica de hover */
+        .info-tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
         }

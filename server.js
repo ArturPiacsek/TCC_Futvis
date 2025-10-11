@@ -770,7 +770,7 @@ app.get('/api/jogador-detalhes/:id_jogador', async (req, res) => {
 // Rota 13: Dados para o Gráfico de Acordes (Fluxo de Vitórias)
 app.get('/api/fluxo-vitorias', async (req, res) => {
     try {
-        const { ano } = req.query; // Agora recebemos o 'ano'
+        const { ano } = req.query;
 
         let sql = `
             SELECT

@@ -254,12 +254,16 @@ function loadGoalkeeperAnalysis() {
 
 // ----- Função para carregar os dados do Gráfico de Acordes -----
 function loadChordDiagram() {
-    const selectElement = document.querySelector('#temporada-filter');
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
-    
-    // Pega o ANO (texto da opção) em vez do ID (valor da opção)
-    // Se a opção selecionada for a default ("Todos os Anos"), o valor é "", então o texto não é pego.
-    const selectedYear = selectedOption.value ? selectedOption.text : '';
+    const temporadaSelect = document.querySelector('#temporada-filter');
+    const timeSelect = document.querySelector('#time-filter');
+
+    const selectedTemporadaOption = temporadaSelect.options[temporadaSelect.selectedIndex];
+    const selectedTimeOption = timeSelect.options[timeSelect.selectedIndex];
+
+    // Pega o ANO da temporada selecionada
+    const selectedYear = selectedTemporadaOption.value ? selectedTemporadaOption.text : '';
+    // Pega o NOME do time selecionado
+    const selectedTeamName = selectedTimeOption.value ? selectedTimeOption.text : null;
 
     const tempoQueryParam = selectedYear ? `?ano=${selectedYear}` : '';
 
@@ -267,7 +271,8 @@ function loadChordDiagram() {
         .then(res => res.json())
         .then(data => {
             if (data && data.length > 0) {
-                createChordDiagram(data);
+                // Passa o nome do time selecionado como segundo argumento
+                createChordDiagram(data, selectedTeamName);
             } else {
                 d3.select("#chord-diagram-chart").html("<p>Nenhum dado de confronto encontrado para este período.</p>");
             }
@@ -576,7 +581,7 @@ function loadHomeAwayChart() {
               .join("g")
               .attr("transform", d => `translate(0, ${yScale(d.nome)})`);
 
-             bars.style("opacity", d => (selectedTeamId && d.id_time != selectedTeamId) ? 0.5 : 1.0);  
+             bars.style("opacity", d => (selectedTeamId && d.id_time != selectedTeamId) ? 0.3 : 1.0);  
 
             bars.selectAll("rect")
               .data(d => subgroups.map(key => ({key: key, value: d[key], teamData: d})))
@@ -1940,7 +1945,7 @@ function displayGoalkeeperStatsList(gkData, maxValues, selector) {
 }
 
 // ----- Função para criar diagrama de acordes -----
-function createChordDiagram(data) {
+function createChordDiagram(data, highlightedTeamName) {
     const selector = "#chord-diagram-chart";
     const container = d3.select(selector);
     container.html("");
@@ -1953,7 +1958,7 @@ function createChordDiagram(data) {
     const svg = container.append("svg")
         .attr("viewBox", [-width / 2, -height / 2, width, height]);
     
-    // 1. Transformar os dados: criar a matriz de adjacência
+    // O resto do código (criação da matriz, layout de acordes, cores) permanece o mesmo
     const names = Array.from(new Set(data.flatMap(d => [d.source, d.target]))).sort();
     const nameToIndex = new Map(names.map((name, i) => [name, i]));
     const matrix = Array.from({ length: names.length }, () => new Array(names.length).fill(0));
@@ -1982,6 +1987,15 @@ function createChordDiagram(data) {
         .attr("fill", d => color(names[d.index]))
         .attr("stroke", d => d3.rgb(color(names[d.index])).darker())
         .attr("d", arc)
+        //Lógica de opacidade para os ARCOS
+        .style("opacity", d => {
+            // Se nenhum time estiver destacado OU se o time atual for o destacado, opacidade total
+            if (!highlightedTeamName || names[d.index] === highlightedTeamName) {
+                return 1;
+            }
+            // Caso contrário, reduz a opacidade
+            return 0.15;
+        })
         .on("mouseover", (event, d) => {
              const totalWins = d3.sum(matrix[d.index]);
              tooltip.style("opacity", 1).html(`<strong>${names[d.index]}</strong><br>Total de Vitórias: ${totalWins}`);
@@ -1998,16 +2012,26 @@ function createChordDiagram(data) {
         .style("font-size", "12px");
 
 
-    // 4. Desenhar as fitas (ribbons/acordes)
+   // 4. Desenhar as fitas (ribbons/acordes)
     const ribbon = d3.ribbon().radius(innerRadius);
     const ribbons = svg.append("g")
-        .attr("fill-opacity", 0.67)
+        // Reduzimos a opacidade padrão aqui para que o destaque seja mais visível
+        .attr("fill-opacity", 0.6) 
         .selectAll("path")
         .data(chords)
         .join("path")
         .attr("d", ribbon)
         .attr("fill", d => color(names[d.source.index]))
         .attr("stroke", d => d3.rgb(color(names[d.source.index])).darker())
+        //Lógica de opacidade para as FITAS
+        .style("opacity", d => {
+            // Se nenhum time estiver destacado OU se a origem OU o destino da fita for o time destacado
+            if (!highlightedTeamName || names[d.source.index] === highlightedTeamName || names[d.target.index] === highlightedTeamName) {
+                return 1;
+            }
+            // Caso contrário, reduz muito a opacidade
+            return 0.05;
+        })
         .on("mouseover", (event, d) => {
              tooltip.style("opacity", 1)
                     .html(`${names[d.source.index]} venceu ${names[d.target.index]}<br><strong>${d.source.value}</strong> vezes`);
@@ -2282,6 +2306,8 @@ function createPieChart(data, selector) {
         .style("margin-left", "5px")
         .style("font-size", "12px")
         .text(d => d);
+
+    container.node().scrollIntoView({ behavior: 'smooth', block: 'end' });    
 }
 
 
@@ -2334,6 +2360,8 @@ function createDefenseDetailChart(data, selector) {
         .on("mouseout", () => {
             tooltip.style("opacity", 0);
         });
+
+    container.node().scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 // ----- Cria o gráfico de detalhes de gols (marcados em casa vs fora). -----
@@ -2376,6 +2404,7 @@ function createGoalsDetailChart(data, selector) {
         .on("mouseout", () => {
             tooltip.style("opacity", 0);
         });
+    container.node().scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 // ----- Função que fixa o navbar na parte superior da tela -----

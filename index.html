@@ -62,36 +62,69 @@
 
                 <div class="tabs-content">
                     <div id="performance-tab" class="tab-pane active">
-                        <div id="home-away-chart"></div> </div>
+                        <div id="home-away-chart"></div>
+                        <div class="info-tooltip-container">
+                            <div class="info-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16">
+                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                                </svg>
+                            </div>
+                            <span class="tooltip-text">
+                                O gráfico é interativo! Passe o mouse sobre os pontos para ver detalhes ou clique para ver mais informações.
+                            </span>
+                        </div>
+                    </div>
                     <div id="clean-sheets-tab" class="tab-pane">
-                        <div id="clean-sheet-chart"></div> </div>
+                        <div id="clean-sheet-chart"></div>
+                        <div class="info-tooltip-container">
+                            <div class="info-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16">
+                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                                </svg>
+                            </div>
+                            <span class="tooltip-text">
+                                O gráfico é interativo! Passe o mouse sobre os pontos para ver detalhes ou clique para ver mais informações.
+                            </span>
+                        </div>
+                    </div>
                     <div id="conversion-rate-tab" class="tab-pane">
-                        <div id="conversion-rate-chart"></div> </div>
+                        <div id="conversion-rate-chart"></div>
+                        <div class="info-tooltip-container">
+                            <div class="info-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16">
+                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                                </svg>
+                            </div>
+                            <span class="tooltip-text">
+                                O gráfico é interativo! Passe o mouse sobre os pontos para ver detalhes ou clique para ver mais informações.
+                            </span>
+                        </div>
+                    </div>
                     <div id="scatter-plot-tab" class="tab-pane">
                         <div id="scatter-plot-chart"></div> </div>    
                 </div>
-                <div id="team-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+            </section>
+                <div id="team-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: -20px;">
                     <h3>Chances Criadas</h3>
                     <div style="display: flex; justify-content: space-around; gap: 20px;">
                         <div id="pie-chart-base" class="chart-container"></div>
                         <div id="pie-chart-comparison" class="chart-container"></div>
                     </div>
                 </div>
-                <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: -20px;">
                     <h3>Gols Sofridos Dentro e Fora de Casa</h3>
                     <div style="display: flex; justify-content: space-around; gap: 20px;">
                         <div id="defense-detail-base" class="chart-container"></div>
                         <div id="defense-detail-comparison" class="chart-container"></div>
                     </div>
                 </div>
-                <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: 20px;">
+                <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: -20px;">
                     <h3>Gols Marcados Dentro e Fora de Casa</h3>
                     <div style="display: flex; justify-content: space-around; gap: 20px;">
                         <div id="goals-detail-base" class="chart-container"></div>
                         <div id="goals-detail-comparison" class="chart-container"></div>
                     </div>
                 </div>
-            </section>
             <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <div class="tabs-nav">
                     <button class="tab-button active" data-target="#stacked-area-tab">Porcentagem de Resultados</button>
@@ -128,6 +161,16 @@
         <h1>Dashboard de Análise de Jogadores</h1>
         <div class="grid-container"> 
             <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
+                <div class="info-tooltip-container">
+                    <div class="info-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                    </div>
+                    <span class="tooltip-text">
+                        Todos os gráficos são interativos! Passe o mouse sobre os dados para ver detalhes ou clique para fazer comparação entre jogadores.
+                    </span>
+                </div>
                 <div class="tabs-nav">
                     <button class="tab-button active" data-target="#artilheiros-tab">Artilheiros</button>
                     <button class="tab-button" data-target="#assistencias-tab">Assistências</button>
@@ -177,6 +220,16 @@
                 </template>            
             <section class="chart-container" style="grid-column: 1 / -1;">
                 <h2>Distribuição de Jogadores por Nacionalidade</h2>
+                <div class="info-tooltip-container">
+                    <div class="info-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                    </div>
+                    <span class="tooltip-text">
+                        O gráfico é interativo! Passe o mouse sobre os pontos para ver detalhes ou clique para ver os jogadores pertencentes àquele país.
+                    </span>
+                </div>
                 <div id="bubble-map-chart"></div>
                 <div id="nationality-details-panel" class="chart-container" style="display: none; grid-column: 1 / -1;">
                     <h3 id="nationality-details-title">Jogadores</h3>
