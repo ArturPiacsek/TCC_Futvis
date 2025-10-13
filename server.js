@@ -3,12 +3,17 @@
 const express = require('express');
 const mysql = require('mysql2/promise'); // Usando a versão com Promises para código mais limpo
 const cors = require('cors');
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const port = 3000;
 
 // Configuração do CORS para permitir requisições do frontend
 app.use(cors());
+
+app.use(express.json({ limit: "10mb" })); // necessário para base64
+app.use(express.static(__dirname));
 
 // Configuração da conexão com o banco de dados MySQL
 const dbConfig = {
@@ -25,6 +30,37 @@ async function executeQuery(sql, params = []) {
     await connection.end();
     return rows;
 }
+
+const chartsDir = path.join(__dirname, "save_charts");
+if (!fs.existsSync(chartsDir)) fs.mkdirSync(chartsDir);
+
+app.post("/api/save-chart", (req, res) => {
+  try {
+    const { imageBase64, fileName } = req.body;
+    console.log("Body recebido:", req.body);
+
+    // Remove o prefixo do Base64 (data:image/png;base64,)
+    const base64Data = imageBase64.replace(/^data:image\/png;base64,/, "");
+
+    const filePath = path.join(chartsDir, `${fileName}.png`);
+
+    // Salva o arquivo em formato binário base64
+    fs.writeFileSync(filePath, base64Data, "base64");
+
+    res.status(200).json({ message: "Imagem salva com sucesso!", path: filePath });
+  } catch (err) {
+    console.error("Erro ao salvar imagem:", err);
+    res.status(500).json({ error: "Erro ao salvar imagem" });
+  }
+});
+
+// --- Rota para listar gráficos ---
+app.get("/api/list-charts", (req, res) => {
+    fs.readdir(chartsDir, (err, files) => {
+        if (err) return res.status(500).json({ error: "Erro ao listar gráficos" });
+        res.json(files.filter(f => f.endsWith(".png")));
+    });
+});
 
 // Rota para filtro de times
 app.get('/api/times', async (req, res) => {

@@ -1005,7 +1005,7 @@ function createHistogram(data) {
         .append("rect")
         .attr("x", 1)
         .attr("transform", d => `translate(${xScale(d.x0)}, ${yScale(d.length)})`)
-        .attr("width", d => xScale(d.x1) - xScale(d.x0) - 1)
+        .attr("width", d => Math.max(0, xScale(d.x1) - xScale(d.x0) - 1))
         .attr("height", d => height - yScale(d.length))
         .style("fill", primaryColor)
         .style("cursor", "pointer")
@@ -2531,6 +2531,47 @@ function updateCardContent(playerData, cardElement) {
     }
 }
 
+async function saveChartAsPNG(svgContainerSelector, chartName) {
+    // Selecionamos o CONTAINER do SVG, não o SVG em si
+    const chartElement = document.querySelector(svgContainerSelector);
+    if (!chartElement) {
+        alert("Gráfico não encontrado!");
+        return;
+    }
+
+    try {
+        // Opções para aumentar a qualidade da imagem (escala 2x)
+        const options = {
+            width: chartElement.clientWidth * 2,
+            height: chartElement.clientHeight * 2,
+            style: {
+                transform: 'scale(2)',
+                transformOrigin: 'top left'
+            }
+        };
+
+        // domtoimage.toPng retorna diretamente a string base64 do PNG
+        const pngBase64 = await domtoimage.toPng(chartElement, options);
+
+        // Envia para o servidor
+        const res = await fetch("/api/save-chart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                imageBase64: pngBase64,
+                fileName: chartName || "grafico_" + Date.now(),
+            }),
+        });
+
+        const data = await res.json();
+        alert(data.message || "Gráfico salvo com sucesso!");
+
+    } catch (err) {
+        console.error("Erro ao salvar gráfico:", err);
+        alert("Erro ao salvar o gráfico!");
+    }
+}
+
 // ----- INICIALIZAÇÃO DA PÁGINA -----
 document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
@@ -2615,20 +2656,35 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAllVisualizations();
     });
 
-    // Menu lateral colapsável dos filtros
-    const toggleBtn = document.getElementById('toggle-sidebar').addEventListener('click', () => {
-        const sidebar = document.getElementById('sidebar');
-        sidebar.classList.toggle('active');
-    });
+    const toggleBtn = document.getElementById('toggle-sidebar');
     const sidebar = document.getElementById('sidebar');
 
     toggleBtn.addEventListener('click', () => {
         const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
 
         if (isDesktop) {
-            sidebar.classList.toggle('collapsed'); // recolhe ou mostra fixo no desktop
+            sidebar.classList.toggle('active'); // Mostra/esconde no desktop
         } else {
-            sidebar.classList.toggle('active'); // mostra ou esconde sidebar sobreposta aos gráficos em telas menores
+            sidebar.classList.toggle('active'); // Mesmo comportamento no mobile
+        }
+
+        // Atualiza o texto do botão conforme o estado
+        if (sidebar.classList.contains('active')) {
+            toggleBtn.textContent = '✖ Fechar';
+        } else {
+            toggleBtn.textContent = '☰ Filtros';
+        }
+    });
+
+    // Fecha a sidebar ao clicar fora (somente mobile)
+    document.addEventListener('click', (e) => {
+        const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+        if (!isDesktop) {
+            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                sidebar.classList.remove('active');
+                toggleBtn.textContent = '☰ Filtros';
+            }
         }
     });
 });

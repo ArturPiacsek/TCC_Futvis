@@ -309,6 +309,17 @@
             background-color: white;
             color: #222
         }
+
+        /* Sidebar colapsada no desktop */
+        @media (min-width: 1024px) {            
+            .sidebar-filtros.collapsed {
+                transform: translateX(-180px); /* recolhe, mas deixa uma faixa */
+                width: 40px;
+                padding: 10px;
+                overflow: hidden;
+            }
+        }
+        
         /* Botão para abrir/fechar a sidebar dos filtros */
         #toggle-sidebar {
             position: fixed;
@@ -513,4 +524,34 @@
         .info-tooltip-container:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
+        }
+
+         .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+        }
+        .dashboard-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .dashboard-item img {
+            width: 100%;
+            height: auto;
+        }
+        .delete-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-weight: bold;
         }
