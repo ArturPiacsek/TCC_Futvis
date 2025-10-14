@@ -31,7 +31,7 @@
     <nav class="main-nav">
         <button id="show-teams-btn" class="nav-button active">Análise de Times</button>
         <button id="show-players-btn" class="nav-button">Análise de Jogadores</button>
-        <a href="dashboard.html" target="_blank" class="dashboard-link">📊 Ver Dashboard</a>
+        <a href="dashboard.html" target="_blank" class="dashboard-link nav-button">Ver Dashboard</a>
     </nav>    
 
     <div id="teams-view" class="view active">
@@ -66,7 +66,7 @@
                 <div class="tabs-content">
                     <div id="performance-tab" class="tab-pane active">
                         <div id="home-away-chart"></div>
-                        <button onclick="saveChartAsPNG('#home-away-chart', 'performance')">💾 Salvar gráfico</button>
+                        <button class="nav-button btn-hide-on-save" onclick="saveChartAsPNG('#home-away-chart', 'Análise de Desempenho Dentro e Fora de Casa')">💾 Salvar gráfico</button>
                         <div class="info-tooltip-container">
                             <div class="info-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16">
@@ -80,7 +80,7 @@
                     </div>
                     <div id="clean-sheets-tab" class="tab-pane">
                         <div id="clean-sheet-chart"></div>
-                        <button onclick="saveChartAsPNG('#clean-sheet-chart', 'clean_sheets')">💾 Salvar gráfico</button>
+                        <button class="nav-button btn-hide-on-save" onclick="saveChartAsPNG('#clean-sheet-chart', 'Análise de Jogos sem sofrer gol')">💾 Salvar gráfico</button>
                         <div class="info-tooltip-container">
                             <div class="info-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16">
@@ -94,7 +94,7 @@
                     </div>
                     <div id="conversion-rate-tab" class="tab-pane">
                         <div id="conversion-rate-chart"></div>
-                        <button onclick="saveChartAsPNG('#conversion-rate-chart', 'Eficiência_Ofensiva')">💾 Salvar gráfico</button>
+                        <button class="nav-button btn-hide-on-save" onclick="saveChartAsPNG('#conversion-rate-chart', 'Análise da Eficiência Ofensiva')">💾 Salvar gráfico</button>
                         <div class="info-tooltip-container">
                             <div class="info-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16">
@@ -108,7 +108,7 @@
                     </div>
                     <div id="scatter-plot-tab" class="tab-pane">
                         <div id="scatter-plot-chart"></div> 
-                        <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button>
+                        <button class="nav-button btn-hide-on-save" onclick="saveChartAsPNG('#scatter-plot-chart', 'Estilo de Jogo')">💾 Salvar gráfico</button>
                     </div>    
                 </div>
             </section>
@@ -118,20 +118,34 @@
                         <div id="pie-chart-base" class="chart-container"></div>
                         <div id="pie-chart-comparison" class="chart-container"></div>
                     </div>
+                    <button class="nav-button btn-hide-on-save" style="margin-top: 15px;"
+                            onclick="saveChartAsPNG('#team-comparison-panel', 'Comparação Chances Criadas')">
+                        💾 Salvar Gráfico
+                    </button>
                 </div>
+
                 <div id="team-defense-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: -20px;">
                     <h3>Gols Sofridos Dentro e Fora de Casa</h3>
                     <div style="display: flex; justify-content: space-around; gap: 20px;">
                         <div id="defense-detail-base" class="chart-container"></div>
                         <div id="defense-detail-comparison" class="chart-container"></div>
                     </div>
+                    <button class="nav-button btn-hide-on-save" style="margin-top: 15px;"
+                            onclick="saveChartAsPNG('#team-defense-comparison-panel', 'Comparação Gols Sofridos')">
+                        💾 Salvar Gráfico
+                    </button>
                 </div>
+
                 <div id="team-goals-comparison-panel" style="display: none; grid-column: 1 / -1; margin-top: -20px;">
                     <h3>Gols Marcados Dentro e Fora de Casa</h3>
                     <div style="display: flex; justify-content: space-around; gap: 20px;">
                         <div id="goals-detail-base" class="chart-container"></div>
                         <div id="goals-detail-comparison" class="chart-container"></div>
                     </div>
+                    <button class="nav-button btn-hide-on-save" style="margin-top: 15px;"
+                            onclick="saveChartAsPNG('#team-goals-comparison-panel', 'Comparação Gols Marcados')">
+                        💾 Salvar Gráfico
+                    </button>
                 </div>
             <section class="chart-container large-chart-container" style="grid-column: 1 / -1;">
             <div class="tabs-nav">
@@ -144,30 +158,33 @@
                 <div class="tabs-content">
                     <div id="stacked-area-tab" class="tab-pane active">
                         <div id="stacked-area-chart"></div>
-                        <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button>
+                        <button class="nav-button btn-hide-on-save" onclick="saveChartAsPNG('#stacked-area-chart', 'Porcentagem de Resultados')">💾 Salvar gráfico</button>
                      </div>
                     <div id="heatmap-tab" class="tab-pane">
                         <div class="heatmap-toggle">
                             <button id="heatmap-faltas-btn" class="active">Faltas</button>
-                            <button id="heatmap-cartoes-btn">Cartões</button>
-                            <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button>
+                            <button id="heatmap-cartoes-btn">Cartões</button>                            
                         </div>
                         <div id="heatmap-chart"></div>
+                        <button class="nav-button btn-hide-on-save" style="margin-top: 15px;"
+                                onclick="saveHeatmapChart()">
+                            💾 Salvar Gráfico
+                        </button>
                     </div>
                     <div id="media-gols-tab" class="tab-pane">
                         <div id="multi-line-chart"></div> 
-                        <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button>
+                        <button class="nav-button btn-hide-on-save" onclick="saveChartAsPNG('#multi-line-chart', 'Média de Gols')">💾 Salvar gráfico</button>
                     </div>
                     <div id="chord-diagram-tab" class="tab-pane">
                         <div id="chord-diagram-chart"></div> 
-                        <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button>
+                        <button class="nav-button btn-hide-on-save" onclick="saveChartAsPNG('#chord-diagram-chart', 'Fluxo de Vitórias')">💾 Salvar gráfico</button>
                     </div>    
                 </div>
             </section>
             <section class="chart-container" style="grid-column: 1 / -1;"> 
                 <h2>Tabela do Campeonato</h2>            
                 <div id="tabela-campeonato-table"></div>
-                <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button> 
+                <button class="nav-button btn-hide-on-save" onclick="saveChartAsPNG('#tabela-campeonato-table', 'Tabela do Campeonato')">💾 Salvar gráfico</button> 
             </section>
         </div>
     </div>
@@ -197,19 +214,54 @@
                 </div>
 
                 <div class="tabs-content">
-                    <div id="artilheiros-tab" class="tab-pane active"></div>
-                    <div id="assistencias-tab" class="tab-pane"></div>
-                    <div id="participacoes-tab" class="tab-pane"></div>
-                    <div id="disciplina-tab" class="tab-pane"></div>
-                    <div id="goleiros-scatter-tab" class="tab-pane"></div>
-                    <div id="gol-minuto-tab" class="tab-pane">
+                    <div id="artilheiros-tab" 
+                        class="tab-pane active" 
+                        data-filename="Artilheiros" 
+                        data-chart-container="#artilheiros-tab">
+                    </div>
+
+                    <div id="assistencias-tab" 
+                        class="tab-pane" 
+                        data-filename="Assistencias" 
+                        data-chart-container="#assistencias-tab">
+                    </div>
+
+                    <div id="participacoes-tab" 
+                        class="tab-pane"
+                        data-filename="Participações"
+                        data-chart-container="#participacoes-tab">
+                    </div>
+
+                    <div id="disciplina-tab" 
+                        class="tab-pane"
+                        data-filename="Cartões"
+                        data-chart-container="#disciplina-tab">
+                    </div>
+                    
+                    <div id="goleiros-scatter-tab" 
+                        class="tab-pane"
+                        data-filename="Goleiros"
+                        data-chart-container="#goleiros-scatter-tab">                        
+                    </div>
+                    <div id="gol-minuto-tab" 
+                        class="tab-pane" 
+                        data-filename="Gols por Minuto" 
+                        data-chart-container="#gol-minuto-tab">
                         <div id="histogram-chart"></div>
-                        <div id="histogram-details"></div>                        
-                        </div> 
-                        <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button>   
+                        <div id="histogram-details"></div>
+                    </div>                            
                 </div>
-            </section>
-            <section id="player-comparison-container" class="chart-container" style="grid-column: 1 / -1; display: none;"></section>
+                <button class="nav-button btn-hide-on-save" id="save-active-chart-btn">💾 Salvar gráfico</button>
+            </section>            
+           <section id="player-comparison-container" 
+                    class="chart-container" 
+                    style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 16px;">
+                
+                <div id="comparison-actions" style="margin-top: 10px;">
+                    <button id="save-comparison-btn" class="nav-button btn-hide-on-save">💾 Salvar Comparação Completa</button>
+                </div>
+
+            </section>           
                 <template id="player-card-template">
                     <div class="player-comparison-card">
                         <span class="details-close-btn">&times;</span>                        
@@ -226,11 +278,10 @@
 
                             <div class="radar-stats-list" style="flex-basis: 250px; flex-shrink: 0;">
                                 </div>
-                        </div>
-                        <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button> 
+                        </div>                        
                     </div>
                 </template>            
-            <section class="chart-container" style="grid-column: 1 / -1;">
+            <section id="nationality-chart-section" class="chart-container" style="grid-column: 1 / -1;">
                 <h2>Distribuição de Jogadores por Nacionalidade</h2>
                 <div class="info-tooltip-container">
                     <div class="info-icon">
@@ -242,12 +293,15 @@
                         O gráfico é interativo! Passe o mouse sobre os pontos para ver detalhes ou clique para ver os jogadores pertencentes àquele país.
                     </span>
                 </div>
-                <div id="bubble-map-chart"></div>
-                <button onclick="saveChartAsPNG('#scatter-plot-chart svg', 'dispersao_times')">💾 Salvar gráfico</button>
+                <div id="bubble-map-chart"></div>                
                 <div id="nationality-details-panel" class="chart-container" style="display: none; grid-column: 1 / -1;">
                     <h3 id="nationality-details-title">Jogadores</h3>
                     <div id="nationality-details-list"></div>                
                 </div>
+                <button class="nav-button btn-hide-on-save" style="margin-top: 15px;"
+                        onclick="saveChartAsPNG('#nationality-chart-section', 'Nacionalidade Jogadores')">
+                    💾 Salvar Gráfico
+                </button>
             </section>           
         </div> 
     </div> 

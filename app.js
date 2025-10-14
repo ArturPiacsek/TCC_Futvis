@@ -371,38 +371,85 @@ function showTeamComparisonPanel(clickedTeamData) {
     const panel = d3.select("#team-comparison-panel");
     const baseContainer = d3.select("#pie-chart-base");
     const comparisonContainer = d3.select("#pie-chart-comparison");
-
     const timeSelect = document.querySelector('#time-filter');
     const selectedTeamId = timeSelect.value;
-    const selectedTempoId = document.querySelector('#temporada-filter').value;
-    const tempoQueryParam = selectedTempoId ? `&id_tempo=${selectedTempoId}` : '';
+    const tempoQueryParam = document.querySelector('#temporada-filter').value ? `&id_tempo=${document.querySelector('#temporada-filter').value}` : '';
 
-    panel.style("display", "block"); // Mostra o painel
+    panel.style("display", "block");
     baseContainer.html("Carregando...");
-    comparisonContainer.html(""); // Limpa o container de comparação
+    comparisonContainer.html("");
 
-    // CASO 1: Um time já está selecionado no filtro principal (MODO COMPARAÇÃO)
     if (selectedTeamId && selectedTeamId != clickedTeamData.id_time) {
         comparisonContainer.style("display", "block");
-
         Promise.all([
-            fetch(`${API_BASE_URL}/time-detalhes-ofensivos?id_time=${selectedTeamId}${tempoQueryParam}`),
-            fetch(`${API_BASE_URL}/time-detalhes-ofensivos?id_time=${clickedTeamData.id_time}${tempoQueryParam}`)
-        ])
-        .then(responses => Promise.all(responses.map(res => res.json())))
-        .then(([baseData, comparisonData]) => {
+            fetch(`${API_BASE_URL}/time-detalhes-ofensivos?id_time=${selectedTeamId}${tempoQueryParam}`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/time-detalhes-ofensivos?id_time=${clickedTeamData.id_time}${tempoQueryParam}`).then(res => res.json())
+        ]).then(([baseData, comparisonData]) => {
             createPieChart(baseData, "#pie-chart-base");
             createPieChart(comparisonData, "#pie-chart-comparison");
         });
-    } 
-    // CASO 2: Nenhum time no filtro, ou clicou no mesmo time do filtro (MODO VISUALIZAÇÃO SIMPLES)
-    else {
-        comparisonContainer.style("display", "none"); // Esconde o segundo container
+    } else {
+        comparisonContainer.style("display", "none");
         fetch(`${API_BASE_URL}/time-detalhes-ofensivos?id_time=${clickedTeamData.id_time}${tempoQueryParam}`)
-            .then(res => res.json())
-            .then(data => {
-                createPieChart(data, "#pie-chart-base");
-            });
+            .then(res => res.json()).then(data => createPieChart(data, "#pie-chart-base"));
+    }
+}
+
+/** Orquestra a exibição do painel de comparação DEFENSIVO (Gols Sofridos). */
+function showTeamDefenseComparisonPanel(clickedTeamData) {
+    const panel = d3.select("#team-defense-comparison-panel");
+    const baseContainer = d3.select("#defense-detail-base");
+    const comparisonContainer = d3.select("#defense-detail-comparison");
+    const timeSelect = document.querySelector('#time-filter');
+    const selectedTeamId = timeSelect.value;
+    const tempoQueryParam = document.querySelector('#temporada-filter').value ? `&id_tempo=${document.querySelector('#temporada-filter').value}` : '';
+
+    panel.style("display", "block");
+    baseContainer.html("Carregando...");
+    comparisonContainer.html("");
+
+    if (selectedTeamId && selectedTeamId != clickedTeamData.id_time) {
+        comparisonContainer.style("display", "block");
+        Promise.all([
+            fetch(`${API_BASE_URL}/time-detalhes-defensivos?id_time=${selectedTeamId}${tempoQueryParam}`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/time-detalhes-defensivos?id_time=${clickedTeamData.id_time}${tempoQueryParam}`).then(res => res.json())
+        ]).then(([baseData, comparisonData]) => {
+            createDefenseDetailChart(baseData, "#defense-detail-base");
+            createDefenseDetailChart(comparisonData, "#defense-detail-comparison");
+        });
+    } else {
+        comparisonContainer.style("display", "none");
+        fetch(`${API_BASE_URL}/time-detalhes-defensivos?id_time=${clickedTeamData.id_time}${tempoQueryParam}`)
+            .then(res => res.json()).then(data => createDefenseDetailChart(data, "#defense-detail-base"));
+    }
+}
+
+/** Orquestra a exibição do painel de comparação de GOLS MARCADOS. */
+function showTeamGoalsComparisonPanel(clickedTeamData) {
+    const panel = d3.select("#team-goals-comparison-panel");
+    const baseContainer = d3.select("#goals-detail-base");
+    const comparisonContainer = d3.select("#goals-detail-comparison");
+    const timeSelect = document.querySelector('#time-filter');
+    const selectedTeamId = timeSelect.value;
+    const tempoQueryParam = document.querySelector('#temporada-filter').value ? `&id_tempo=${document.querySelector('#temporada-filter').value}` : '';
+
+    panel.style("display", "block");
+    baseContainer.html("Carregando...");
+    comparisonContainer.html("");
+
+    if (selectedTeamId && selectedTeamId != clickedTeamData.id_time) {
+        comparisonContainer.style("display", "block");
+        Promise.all([
+            fetch(`${API_BASE_URL}/time-detalhes-gols?id_time=${selectedTeamId}${tempoQueryParam}`).then(res => res.json()),
+            fetch(`${API_BASE_URL}/time-detalhes-gols?id_time=${clickedTeamData.id_time}${tempoQueryParam}`).then(res => res.json())
+        ]).then(([baseData, comparisonData]) => {
+            createGoalsDetailChart(baseData, "#goals-detail-base");
+            createGoalsDetailChart(comparisonData, "#goals-detail-comparison");
+        });
+    } else {
+        comparisonContainer.style("display", "none");
+        fetch(`${API_BASE_URL}/time-detalhes-gols?id_time=${clickedTeamData.id_time}${tempoQueryParam}`)
+            .then(res => res.json()).then(data => createGoalsDetailChart(data, "#goals-detail-base"));
     }
 }
 
@@ -1711,7 +1758,8 @@ function clearComparison() {
  */
 function renderComparisonPanel() {
     const container = document.getElementById('player-comparison-container');
-    container.innerHTML = ''; // Limpa o contêiner antes de redesenhar
+    const existingCards = container.querySelectorAll('.player-comparison-card');
+    existingCards.forEach(card => card.remove());
 
     if (comparedPlayers.length === 0) {
         container.style.display = 'none';
@@ -1755,7 +1803,8 @@ function createPlayerCard(playerData, container) {
     });
 
     // 6. Adiciona o card clonado e preenchido ao contêiner principal
-    container.appendChild(cardElement);
+    const actionsDiv = container.querySelector('#comparison-actions');
+    container.insertBefore(cardElement, actionsDiv); // Usa insertBefore
 
     // 7. Chama a função para buscar os dados e preencher o conteúdo do card
     updateCardContent(playerData, cardElement);
@@ -2531,27 +2580,58 @@ function updateCardContent(playerData, cardElement) {
     }
 }
 
-async function saveChartAsPNG(svgContainerSelector, chartName) {
-    // Selecionamos o CONTAINER do SVG, não o SVG em si
-    const chartElement = document.querySelector(svgContainerSelector);
-    if (!chartElement) {
-        alert("Gráfico não encontrado!");
+async function saveChartAsPNG(elementOrSelector, chartName) {
+    const originalElement = typeof elementOrSelector === 'string'
+        ? document.querySelector(elementOrSelector)
+        : elementOrSelector;
+
+    if (!originalElement) {
+        alert("Elemento do gráfico não encontrado!");
         return;
     }
 
-    try {
-        // Opções para aumentar a qualidade da imagem (escala 2x)
-        const options = {
-            width: chartElement.clientWidth * 2,
-            height: chartElement.clientHeight * 2,
-            style: {
-                transform: 'scale(2)',
-                transformOrigin: 'top left'
-            }
-        };
+    const buttonsToHide = originalElement.querySelectorAll('.btn-hide-on-save');
+    // Adiciona a classe que os torna invisíveis
+    buttonsToHide.forEach(btn => btn.classList.add('hide-on-save'));
 
-        // domtoimage.toPng retorna diretamente a string base64 do PNG
-        const pngBase64 = await domtoimage.toPng(chartElement, options);
+    try {
+        //Coloca as imagens DENTRO do elemento original primeiro
+        const svgElements = originalElement.querySelectorAll('svg');
+        for (const svgElement of svgElements) {
+            await embedSvgImages(svgElement);
+        }
+
+        // Aguarda um instante para garantir que as imagens sejam processadas pelo navegador
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Converte o elemento DOM para um SVG Data URL
+        // Esta etapa é mais confiável para capturar layouts complexos.
+        const svgDataUrl = await domtoimage.toSvg(originalElement, {
+            bgcolor: '#ffffff',
+            width: originalElement.scrollWidth,
+            height: originalElement.scrollHeight
+        });
+
+        // Carrega o SVG Data URL em um objeto de Imagem
+        const img = new Image();
+        const promise = new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = svgDataUrl;
+        });
+        await promise;
+
+        // Desenha a imagem (que veio do SVG) em um novo Canvas
+        const canvas = document.createElement('canvas');
+        const scale = 2; // Fator de escala para alta resolução
+        canvas.width = originalElement.scrollWidth * scale;
+        canvas.height = originalElement.scrollHeight * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0);
+
+        // Exporta o Canvas para um PNG Base64
+        const pngBase64 = canvas.toDataURL('image/png');
 
         // Envia para o servidor
         const res = await fetch("/api/save-chart", {
@@ -2569,7 +2649,80 @@ async function saveChartAsPNG(svgContainerSelector, chartName) {
     } catch (err) {
         console.error("Erro ao salvar gráfico:", err);
         alert("Erro ao salvar o gráfico!");
+    } finally {               
+        // Remove a classe para que os botões voltem a ser visíveis na tela.
+        buttonsToHide.forEach(btn => btn.classList.remove('hide-on-save'));
+        
     }
+}
+
+/**
+ * Converte a URL de uma imagem para o formato Base64.
+ * @param {string} url - A URL da imagem a ser convertida.
+ * @returns {Promise<string>} Uma Promise que resolve com a string Base64 da imagem.
+ */
+async function urlToBase64(url) {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error('Erro ao buscar ou converter a imagem:', url, error);
+        return null; // Retorna nulo se houver falha
+    }
+}
+
+/**
+ * Encontra todas as tags <image> dentro de um elemento SVG e converte seus href para Base64.
+ * @param {SVGElement} svgElement - O elemento SVG a ser processado.
+ */
+async function embedSvgImages(svgElement) {
+    const images = svgElement.querySelectorAll('image');
+    const promises = [];
+
+    images.forEach(img => {
+        const href = img.getAttribute('href') || img.getAttribute('xlink:href');
+        if (href && !href.startsWith('data:image')) { // Processa apenas se não for Base64
+            const promise = urlToBase64(href).then(base64 => {
+                if (base64) {
+                    img.setAttribute('href', base64);
+                }
+            });
+            promises.push(promise);
+        }
+    });
+
+    await Promise.all(promises);
+}
+
+/**
+ * Função dedicada para salvar o gráfico de heatmap.
+ * Ela verifica qual dado está ativo (Faltas ou Cartões)
+ * e define o nome do arquivo dinamicamente antes de salvar.
+ */
+function saveHeatmapChart() {
+    // Pega o botão de "Faltas" para checar se ele está ativo
+    const faltasBtn = document.getElementById('heatmap-faltas-btn');
+    let fileName = 'Disciplina ao Longo do Ano'; // Um nome padrão
+
+    // Verifica qual botão tem a classe 'active' para definir o nome do arquivo
+    if (faltasBtn && faltasBtn.classList.contains('active')) {
+        fileName = 'Faltas ao Longo do Ano';
+    } else {
+        // Se o de faltas não estiver ativo, assume que o de cartões está
+        fileName = 'Cartões ao Longo do Ano';
+    }
+
+    // O seletor do contêiner que queremos salvar é a aba inteira
+    const containerSelector = '#heatmap-tab';
+
+    // Chama nossa função principal e robusta com as informações dinâmicas
+    saveChartAsPNG(containerSelector, fileName);
 }
 
 // ----- INICIALIZAÇÃO DA PÁGINA -----
@@ -2601,8 +2754,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabPanes = document.querySelectorAll(".tab-pane");
 
     tabButtons.forEach(button => {
-        button.addEventListener("click", () => {
-            clearComparison(); 
+        button.addEventListener("click", () => {            
             hideTeamComparisonPanel();
             hideTeamDefenseComparisonPanel();
             hideTeamGoalsComparisonPanel();
@@ -2621,7 +2773,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetPane.classList.add("active");
             }
         });
-    });   
+    });       
 
     const showTeamsBtn = document.getElementById('show-teams-btn');
     const showPlayersBtn = document.getElementById('show-players-btn');
@@ -2687,4 +2839,64 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    const saveButton = document.getElementById('save-active-chart-btn');
+        if (saveButton) {
+            saveButton.addEventListener('click', () => {
+                // Procura a aba ativa dentro da view ativa
+                const activeTab = document.querySelector('.view.active .tab-pane.active');
+
+                if (activeTab) {
+                    const chartSelector = activeTab.dataset.chartContainer;
+                    const fileName = activeTab.dataset.filename;
+
+                    if (chartSelector && fileName) {
+                        saveChartAsPNG(chartSelector, fileName);
+                    } else {
+                        // Este alerta só aparecerá se os data-attributes estiverem faltando
+                        alert('Não foi possível encontrar as informações do gráfico para salvar.');
+                    }
+                } else {
+                    alert('Nenhuma aba de gráfico está ativa na visualização atual.');
+                }
+            });
+        }
+    
+    
+    // Lógica para o botão e container de SALVAR COMPARAÇÃO COMPLETA
+    const saveComparisonBtn = document.getElementById('save-comparison-btn');
+    const comparisonContainerForSave = document.getElementById('player-comparison-container');
+    const comparisonActionsContainer = document.getElementById('comparison-actions');
+
+    if (saveComparisonBtn && comparisonContainerForSave && comparisonActionsContainer) {
+        
+        // Este observador "assiste" o container e reage a mudanças (adição/remoção de cards)
+        const observer = new MutationObserver(() => {
+            // Conta quantos cards existem no container
+            const cardCount = comparisonContainerForSave.querySelectorAll('.player-comparison-card').length;
+            // Se houver mais de 0 cards, mostra a div do botão. Se não, esconde.
+            comparisonActionsContainer.style.display = cardCount > 0 ? 'block' : 'none';
+        });
+        
+        // Inicia a observação
+        observer.observe(comparisonContainerForSave, { childList: true });
+
+        //código para o clique do botão
+        saveComparisonBtn.addEventListener('click', () => {
+            const cards = comparisonContainerForSave.querySelectorAll('.player-comparison-card');
+            if (cards.length === 0) {
+                alert('Não há jogadores na área de comparação para salvar.');
+                return;
+            }
+            
+            const playerNames = Array.from(cards).map(card => {
+                const nameElement = card.querySelector('.player-name');
+                return nameElement ? nameElement.textContent.trim().split(' ')[0] : '';
+            });
+
+            const fileName = `Comparação ${playerNames.join(' e ')}`;
+            
+            saveChartAsPNG(comparisonContainerForSave, fileName);
+        });
+    }
 });

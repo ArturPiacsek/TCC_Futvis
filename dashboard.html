@@ -3,53 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard de Análises</title>
-    <link rel="stylesheet" href="style.css">
     <style>
+        /* CSS Reset e Configurações Globais */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* TEMA ESCURO */
         body {
             font-family: 'Segoe UI', sans-serif;
-            background-color: #f5f6fa;
-            margin: 0;
-            padding: 2rem;
+            background-color: #1a1a1a; /* Fundo escuro (cinza-chumbo) */
+            color: #f0f0f0; /* Cor do texto principal (branco suave) */
         }
+
+        /* Contêiner principal para centralizar o conteúdo */
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Cabeçalho do Dashboard */
+        .dashboard-header {
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #333;
+            margin-bottom: 1.5rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        /* Grid que contém os cards dos gráficos */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 1.5rem;
+            /* Grid responsivo que se ajusta ao tamanho da tela */
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem; /* Espaçamento entre os cards */
         }
+
+        /* Estilo dos Cards (ou "Tiles") */
         .chart-card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: #2b2b2b; /* Fundo do card, um pouco mais claro que o body */
+            border: 1px solid #444; /* Borda sutil */
+            border-radius: 6px; /* Bordas menos arredondadas, mais profissional */
             padding: 1rem;
-            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Sombra mais adequada para tema escuro */
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* Espaço entre a imagem e o título */
         }
+
         .chart-card img {
             width: 100%;
             height: auto;
-            border-radius: 8px;
+            border-radius: 4px; /* Borda da imagem alinhada com a do card */
+            background-color: #ffffff; /* Fundo branco para a imagem se destacar */
         }
-        h1 {
+
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 500;
             text-align: center;
-            margin-bottom: 2rem;
+            color: #e0e0e0;
+        }
+        
+        /* Mensagem para quando não há gráficos */
+        .empty-dashboard-message {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: #888;
         }
     </style>
 </head>
 <body>
-    <h1>Dashboard de Gráficos Salvos</h1>
-    <div class="dashboard-grid" id="charts-container"></div>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Dashboard de Gráficos Salvos</h1>
+        </header>
+    
+        <main class="dashboard-grid" id="charts-container">
+            </main>
+    </div>
 
     <script>
         async function loadSavedCharts() {
-            const res = await fetch('/api/list-charts');
-            const charts = await res.json();
+            try {
+                const res = await fetch('/api/list-charts');
+                const charts = await res.json();
+                const container = document.getElementById('charts-container');
 
-            const container = document.getElementById('charts-container');
-            container.innerHTML = charts.map(file =>
-                `<div class="chart-card">
-                    <img src="save_charts/${file}" alt="${file}">
-                    <h3>${file.replace('.png', '')}</h3>
-                </div>`
-            ).join('');
+                // MELHORIA: Verifica se há gráficos para exibir
+                if (charts.length === 0) {
+                    container.innerHTML = `<div class="empty-dashboard-message">
+                                              <p>Nenhum gráfico foi salvo ainda.</p>
+                                              <p>Volte à página principal e salve seus gráficos favoritos para vê-los aqui.</p>
+                                           </div>`;
+                    // Ajusta o grid para a mensagem ocupar o espaço todo
+                    container.style.grid-template-columns == '1fr'; 
+                    return;
+                }
+
+                // Gera os cards se houver gráficos
+                container.innerHTML = charts.map(file =>
+                    `<div class="chart-card">
+                        <img src="save_charts/${file}" alt="${file.replace('.png', '')}">
+                        <h3>${file.replace('.png', '').replace(/_/g, ' ')}</h3>
+                    </div>`
+                ).join('');
+            } catch (error) {
+                console.error("Erro ao carregar os gráficos:", error);
+                const container = document.getElementById('charts-container');
+                container.innerHTML = `<div class="empty-dashboard-message"><p>Ocorreu um erro ao carregar os gráficos.</p></div>`;
+            }
         }
         loadSavedCharts();
     </script>
