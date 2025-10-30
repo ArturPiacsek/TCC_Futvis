@@ -158,6 +158,8 @@ function createChartCardHTML(file, id) {
                     <circle cx="12" cy="19" r="1"></circle>
                 </svg>
             </div>
+
+            <button class="chart-delete-btn" title="Excluir gráfico">&times;</button>
             
             <img src="save_charts/${file}" alt="${name}">
             <h3>${name}</h3>
@@ -240,7 +242,7 @@ document.getElementById('add-comment-btn').addEventListener('click', () => {
 });
 
 // Gerenciador de eventos para Salvar e Excluir anotações
-document.getElementById('charts-container').addEventListener('click', (event) => {
+document.getElementById('charts-container').addEventListener('click', async (event) => {
     // Se clicou no botão de excluir (X)
     if (event.target.classList.contains('comment-delete-btn')) {
         event.target.closest('.comment-card').remove();
@@ -249,6 +251,44 @@ document.getElementById('charts-container').addEventListener('click', (event) =>
         const container = document.getElementById('charts-container');
         initializeDragAndDrop(container); // Re-inicializa o Sortable.js
         return;
+    }
+
+    // --- NOVO: Lógica para excluir GRÁFICO ---
+    if (event.target.classList.contains('chart-delete-btn')) {
+        const card = event.target.closest('.chart-card');
+        const fileName = card.dataset.file;
+        
+        // 1. Confirmação do usuário
+        if (confirm(`Tem certeza que deseja excluir o gráfico "${fileName}"?\n\nEsta ação não pode ser desfeita.`)) {
+            try {
+                // 2. Envia o pedido para o servidor
+                const res = await fetch('/api/delete-chart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: fileName })
+                });
+                
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Erro desconhecido no servidor');
+                }
+
+                // 3. Sucesso: Remove da UI e salva o novo estado
+                card.remove();
+                saveLayout();
+                
+                const container = document.getElementById('charts-container');
+                initializeDragAndDrop(container); // Re-sincroniza o Sortable
+
+                alert(data.message); // Exibe "Gráfico excluído com sucesso!"
+
+            } catch (err) {
+                console.error('Falha ao excluir o gráfico:', err);
+                alert(`Erro ao excluir o gráfico: ${err.message}`);
+            }
+        }
+        return; // Sai da função para não acionar o lightbox
     }
 
     // Lógica para abrir o lightbox ao clicar na imagem

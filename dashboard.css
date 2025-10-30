@@ -65,6 +65,29 @@ body {
     color: #e0e0e0;
 }
 
+.chart-delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px; /* Posição no canto superior direito */
+    background: #444;
+    border: none;
+    color: #f0f0f0;
+    font-weight: bold;
+    font-size: 1rem;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    line-height: 28px;
+    text-align: center;
+    z-index: 11; /* Garante que fique acima da alça de arrastar */
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.chart-delete-btn:hover {
+    background: #d9534f; /* Vermelho ao passar o mouse */
+    color: white;
+}
 /* --- MENSAGEM DE DASHBOARD VAZIO --- */
 .empty-dashboard-message {
     text-align: center;
@@ -129,7 +152,7 @@ body {
     color: white;
 }
 
-/* --- BOTÃO FLUTUANTE (FAB) --- */
+/* --- BOTÃO FLUTUANTE --- */
 #add-comment-btn {
     position: fixed;
     bottom: 2rem;
@@ -147,7 +170,7 @@ body {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
     cursor: pointer;
     z-index: 1000;
-    transition: transform 0.2s ease-out;
+    transition: transform 0.1s ease-out;
 }
 
 #add-comment-btn:hover {
@@ -155,7 +178,7 @@ body {
     background-color: #0086f0;
 }
 
-/* --- NOVO: Estilos para a "Alça" de Arrastar --- */
+/* --- Estilo para a "Alça" de Arrastar --- */
 .drag-handle {
     position: absolute;
     top: 15px;

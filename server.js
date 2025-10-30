@@ -54,6 +54,37 @@ app.post("/api/save-chart", (req, res) => {
   }
 });
 
+// --- ROTA PARA EXCLUIR GRÁFICOS ---
+app.post("/api/delete-chart", (req, res) => {
+    const { fileName } = req.body;
+
+    if (!fileName) {
+        return res.status(400).json({ error: "Nome do arquivo não fornecido." });
+    }
+
+    // Validação de segurança simples para evitar que tentem apagar arquivos fora da pasta
+    if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+         return res.status(400).json({ error: "Nome de arquivo inválido." });
+    }
+
+    // Lembre-se que 'chartsDir' deve estar definido no topo do seu server.js
+    // (ex: const chartsDir = path.join(__dirname, "save_charts");)
+    const filePath = path.join(chartsDir, fileName);
+
+    // Tenta excluir o arquivo
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            if (err.code === 'ENOENT') { // ENOENT = "Error NO ENTry" (Arquivo não existe)
+                return res.status(404).json({ error: "Arquivo não encontrado." });
+            }
+            // Outro erro (ex: permissão negada)
+            console.error("Erro ao excluir o arquivo:", err);
+            return res.status(500).json({ error: "Erro interno ao tentar excluir o arquivo." });
+        }                
+        res.status(200).json({ message: "Gráfico excluído com sucesso!" });
+    });
+});
+
 // --- Rota para listar gráficos ---
 app.get("/api/list-charts", (req, res) => {
     fs.readdir(chartsDir, (err, files) => {
