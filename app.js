@@ -2861,6 +2861,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ----- Funçao do botão de limpar filtros -----
+    const clearFiltersBtn = document.getElementById('clear-filters');
+    const timeFilter = document.getElementById('time-filter');
+    const temporadaFilter = document.getElementById('temporada-filter');
+
+    clearFiltersBtn.addEventListener('click', () => {
+        // Limpa os valores dos selects
+        timeFilter.value = "";
+        temporadaFilter.value = "";
+
+        if (typeof updateAllVisualizations === 'function') {
+            updateAllVisualizations();
+        }
+
+        // Feedback visual
+        clearFiltersBtn.textContent = "Filtros limpos!";
+        clearFiltersBtn.disabled = true;
+
+        setTimeout(() => {
+            clearFiltersBtn.textContent = "Limpar";
+            clearFiltersBtn.disabled = false;
+        }, 1200);
+    });
+
     const saveButton = document.getElementById('save-active-chart-btn');
         if (saveButton) {
             saveButton.addEventListener('click', () => {
