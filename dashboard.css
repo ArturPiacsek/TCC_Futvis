@@ -262,3 +262,14 @@ body {
 .sortable-chosen {
     cursor: grabbing; /* Mão fechada */
 }
+
+/* Rodapé minimalista */
+.footer {
+    position: fixed;
+    bottom: 8px;
+    right: 12px;
+    font-size: 12px;
+    color: #888;
+    opacity: 0.7;
+    pointer-events: none;
+}

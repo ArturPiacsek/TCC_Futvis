@@ -1,32 +1,32 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
 const coresTimes = {
-    '1': { primary: '#006CB5', secondary: '#ED3237' },  // Bahia
-    '2': { primary: '#E5050F', secondary: '#DCDCDC' },  // Internacional
-    '3': { primary: '#BC8422', secondary: '#000000' },  // Botafogo - Cor de apoio institucional
-    '4': { primary: '#006437', secondary: '#DCDCDC' },  // Palmeiras
-    '5': { primary: '#CC001A', secondary: '#000000' },  // Sport
-    '6': { primary: '#870A28', secondary: '#00613C' },  // Fluminense
-    '7': { primary: '#007F4E', secondary: '#000000' },  // América MG
-    '8': { primary: '#FE0000', secondary: '#000000' },  // São Paulo
-    '9': { primary: '#C52613', secondary: '#000000' },  // Flamengo
-    '10': { primary: '#C69F0F', secondary: '#DCDCDC' },  // Santos - Cor da coroa em homenagem ao Pelé
-    '11': { primary: '#4D2E6F', secondary: '#DCDCDC' },  // Ceará - Roxo por conta da campanha "Roxo pelo Vozão"
-    '12': { primary: '#0D80BF', secondary: '#000000' },  // Grêmio
-    '13': { primary: '#CC2031', secondary: '#DCDCDC' },  // Corinthians
-    '14': { primary: '#0E8E3A', secondary: '#DCDCDC' },  // Chapecoense
-    '15': { primary: '#E2231A', secondary: '#DCDCDC' },  // Vasco
-    '16': { primary: '#CE181E', secondary: '#000000' },  // Athletico Paranaense
-    '17': { primary: '#2F529E', secondary: '#DCDCDC' },  // Cruzeiro
-    '18': { primary: '#DC1212', secondary: '#000000' },  // Atletico GO
-    '19': { primary: '#00679A', secondary: '#DCDCDC' },  // Avaí
-    '20': { primary: '#00544D', secondary: '#DCDCDC' },  // Coritiba
-    '21': { primary: '#00491E', secondary: '#DCDCDC' },  // Goiás
-    '22': { primary: '#009035', secondary: '#DCDCDC' },  // Juventude
-    '23': { primary: '#006CB5', secondary: '#ED3237' },  // Fortaleza
-    '24': { primary: '#D2003C', secondary: '#001D46' },  // Bragantino
-    '25': { primary: '#FFD503', secondary: '#000000' },  // Atlético MG
-    '26': { primary: '#FFD200', secondary: '#066334' }, // Cuiabá
+    '1': { primary: '#006CB5', darkPrimary: '#006CB5', secondary: '#ED3237', darkSecondary: '#ED3237' },  // Bahia
+    '2': { primary: '#E5050F', darkPrimary: '#E5050F', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Internacional
+    '3': { primary: '#BC8422', darkPrimary: '#BC8422', secondary: '#000000', darkSecondary: '#DCDCDC' },  // Botafogo - Cor de apoio institucional
+    '4': { primary: '#006437', darkPrimary: '#006437', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Palmeiras
+    '5': { primary: '#CC001A', darkPrimary: '#CC001A', secondary: '#000000', darkSecondary: '#FFD900' },  // Sport
+    '6': { primary: '#870A28', darkPrimary: '#00613C', secondary: '#00613C', darkSecondary: '#870A28' },  // Fluminense
+    '7': { primary: '#007F4E', darkPrimary: '#007F4E', secondary: '#000000', darkSecondary: '#DCDCDC' },  // América MG
+    '8': { primary: '#FE0000', darkPrimary: '#FE0000', secondary: '#000000', darkSecondary: '#DCDCDC' },  // São Paulo
+    '9': { primary: '#C52613', darkPrimary: '#C52613', secondary: '#000000', darkSecondary: '#000000' },  // Flamengo
+    '10': { primary: '#C69F0F', darkPrimary: '#C69F0F', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Santos - Cor da coroa em homenagem ao Pelé
+    '11': { primary: '#4D2E6F', darkPrimary: '#4D2E6F', secondary: '#000000', darkSecondary: '#DCDCDC' },  // Ceará - Roxo por conta da campanha "Roxo pelo Vozão"
+    '12': { primary: '#0D80BF', darkPrimary: '#0D80BF', secondary: '#000000', darkSecondary: '#DCDCDC' },  // Grêmio
+    '13': { primary: '#CC2031', darkPrimary: '#CC2031', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Corinthians
+    '14': { primary: '#0E8E3A', darkPrimary: '#0E8E3A', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Chapecoense
+    '15': { primary: '#E2231A', darkPrimary: '#E2231A', secondary: '#000000', darkSecondary: '#DCDCDC' },  // Vasco
+    '16': { primary: '#CE181E', darkPrimary: '#CE181E', secondary: '#000000', darkSecondary: '#000000' },  // Athletico Paranaense
+    '17': { primary: '#2F529E', darkPrimary: '#2F529E', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Cruzeiro
+    '18': { primary: '#DC1212', darkPrimary: '#DC1212', secondary: '#000000', darkSecondary: '#DCDCDC' },  // Atletico GO
+    '19': { primary: '#00679A', darkPrimary: '#00679A', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Avaí
+    '20': { primary: '#00544D', darkPrimary: '#00544D', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Coritiba
+    '21': { primary: '#00491E', darkPrimary: '#00491E', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Goiás
+    '22': { primary: '#009035', darkPrimary: '#009035', secondary: '#DCDCDC', darkSecondary: '#DCDCDC' },  // Juventude
+    '23': { primary: '#006CB5', darkPrimary: '#006CB5', secondary: '#ED3237', darkSecondary: '#ED3237' },  // Fortaleza
+    '24': { primary: '#D2003C', darkPrimary: '#D2003C', secondary: '#001D46', darkSecondary: '#DCDCDC' },  // Bragantino
+    '25': { primary: '#FFD503', darkPrimary: '#FFD503', secondary: '#000000', darkSecondary: '#DCDCDC' },  // Atlético MG
+    '26': { primary: '#FFD200', darkPrimary: '#FFD200', secondary: '#066334', darkSecondary: '#066334' }, // Cuiabá
 }
 
 let comparedPlayers = [];
@@ -42,7 +42,7 @@ function updateAllVisualizations() {
     hideTeamGoalsComparisonPanel();
     hideNationalityDetails();
     updateHighlightColor();
-    updateKpis();                 
+    updateKpis();               
     
     if (document.getElementById('teams-view').classList.contains('active')) {        
         loadTemporalAnalysisCharts();
@@ -1355,6 +1355,9 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
             
         const tooltip = d3.select('.tooltip');
 
+        // 0. Pega a cor de destaque atual (atualizada pelo modo e time selecionados)
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--cor-destaque').trim();
+
         // 1. Converter os dados do mapa (TopoJSON) para GeoJSON
         const countries = topojson.feature(worldAtlas, worldAtlas.objects.countries);
 
@@ -1396,7 +1399,7 @@ function updateKpiCard(selector, kpiData, suffix = '', higherIsBetter = true) {
             // Posiciona a bolha no centroide (centro geográfico) do país
             .attr("transform", d => `translate(${pathGenerator.centroid(d)})`)
             .attr("r", d => radiusScale(playerCounts.get(d.properties.name)))
-            .style("fill", "#1f77b4")
+            .style("fill", primaryColor)
             .style("fill-opacity", 0.7)
             .style("stroke", "#fff")
             .style("stroke-width", 0.5)
@@ -2479,8 +2482,26 @@ function updateHighlightColor() {
     const selectedTeamId = document.querySelector('#time-filter').value;
     const teamColors = coresTimes[selectedTeamId]  || { primary: '#1f77b4', secondary: '#ff7f0e' };
 
-    document.documentElement.style.setProperty('--cor-destaque', teamColors.primary);
-    document.documentElement.style.setProperty('--cor-secundaria', teamColors.secondary);
+    const isDarkMode = document.body.classList.contains('dark-mode');
+
+    const primary = isDarkMode ? (teamColors.darkPrimary || teamColors.primary) : teamColors.primary;
+    const secondary = isDarkMode ? (teamColors.darkSecondary || teamColors.secondary) : teamColors.secondary;
+
+    document.documentElement.style.setProperty('--cor-destaque', primary);
+    document.documentElement.style.setProperty('--cor-secundaria', secondary);
+}
+
+// ----- Função que pega a cor da legenda (será utilizada para atualizar ao trocar de modo) -----
+function refreshChartLegendColors() {
+    const legendColor = document.body.classList.contains('dark-mode') ? '#ffffff' : '#000000';
+
+    // Para os eixos x e y
+    d3.selectAll('.chart-container svg .x-axis text, .chart-container svg .y-axis text')
+        .style('fill', legendColor);
+    
+    // Para legendas internas (caso haja)
+    d3.selectAll('.chart-container svg .legend text')
+        .style('fill', legendColor);
 }
 
 /**
@@ -2897,6 +2918,44 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileName = `Comparação ${playerNames.join(' e ')}`;
             
             saveChartAsPNG(comparisonContainerForSave, fileName);
+        });
+    }
+
+    const toggleSwitch = document.getElementById('darkModeToggle');
+    const sunIcon = document.querySelector('.icon-sun');
+    const moonIcon = document.querySelector('.icon-moon');
+
+    function updateIcons(isDark) {
+        if (isDark) {
+            sunIcon.classList.remove('active');
+            moonIcon.classList.add('active');
+        } else {
+            sunIcon.classList.add('active');
+            moonIcon.classList.remove('active');
+        }
+    }
+
+    updateIcons(document.body.classList.contains('dark-mode'));
+
+    if (toggleSwitch) {
+        // Inicializa a página com a preferência salva anteriormente
+        if (localStorage.getItem('dark-mode') === 'true') {
+            document.body.classList.add('dark-mode');
+            toggleSwitch.checked = true;
+        }
+
+        updateHighlightColor();
+
+        // Alterna o modo escuro ao clicar no slider
+        toggleSwitch.addEventListener('change', () => {
+            const isDarkMode = toggleSwitch.checked;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            localStorage.setItem('dark-mode', isDarkMode);
+            
+            updateIcons(isDarkMode);
+            updateHighlightColor();
+            updateAllVisualizations();
+            refreshChartLegendColors();
         });
     }
 });

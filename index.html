@@ -13,25 +13,47 @@
 </head>
 <body>
 
-    <button id="toggle-sidebar" class="toggle-btn">☰ Filtros</button>
+    <button id="toggle-sidebar" class="toggle-btn">
+        <span class="icon">☰</span> Filtros
+    </button>
 
     <aside class="sidebar-filtros" id="sidebar">
-        <h3>Filtros</h3>
-        <label for="time-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Time:</label>
-        <select id="time-filter">
-            <option value="">-- Todos os Times --</option>
-        </select>
+        <div class="sidebar-header">
+            <h3>Filtros</h3>
+        </div>
 
-        <label for="temporada-filter" style="font-weight: bold; margin-right: 10px;">Filtrar por Temporada:</label>
-        <select id="temporada-filter">
-            <option value="">-- Todos os Anos (Acumulado) --</option>
-        </select>
+        <div class="filter-group">
+            <label for="time-filter">Time</label>
+            <select id="time-filter">
+                <option value="">Todos os Times</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="temporada-filter">Temporada</label>
+            <select id="temporada-filter">
+                <option value="">Todos os Anos (Acumulado)</option>
+            </select>
+        </div>
+
+        <div class="filter-actions">
+            <button id="apply-filters" class="apply-btn">Aplicar</button>
+            <button id="clear-filters" class="clear-btn">Limpar</button>
+        </div>
     </aside>
 
     <nav class="main-nav">
         <button id="show-teams-btn" class="nav-button active">Análise de Times</button>
         <button id="show-players-btn" class="nav-button">Análise de Jogadores</button>
         <a href="dashboard.html" target="_blank" class="dashboard-link nav-button">Ver Dashboard</a>
+        <div class="dark-mode-toggle">
+            <span class="icon-sun">☀️</span>
+            <label class="switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="slider"></span>
+            </label>
+            <span class="icon-moon">🌙</span>
+        </div>
     </nav>    
 
     <div id="teams-view" class="view active">
@@ -309,15 +331,16 @@
         <div class="div-footer">
             <div class="div-footer-1">
                 <div class="div-footer-1-coluna">
-                    <span><b>LOGO</b></span>
-                    <p>Endereço</p>
+                    <img src="https://congressotelevisoes.com.br/wp-content/uploads/2017/06/uff-universidade-federal-fluminense.png" alt="Logo da UFF" class="footer-logo">
+                    <p>Av. Gal. Milton Tavares de Souza, s/nº, Boa Viagem - Niterói/RJ - Brasil</p>
                 </div>
             </div>
 
             <div class="div-footer-2">
                 <div class="div-footer-2-coluna">
-                    <span><b>Contato</b></span>
-                    <p>contato@na.na</p>
+                    <span><b>Contatos</b></span>
+                    <p>Instagram - </p>
+                    <p>Facebook - </p>
                 </div>
             </div>
 
