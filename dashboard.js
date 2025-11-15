@@ -93,8 +93,7 @@ function renderDashboard(layout) {
  * Salva o layout ATUAL do DOM no localStorage.
  * Esta é a função principal de salvamento.
  */
-function saveLayout() {
-    // ... (o conteúdo da sua função de salvar layout continua o mesmo) ...
+function saveLayout() {    
     const container = document.getElementById('charts-container');
     const items = container.children;
     const layoutToSave = [];
@@ -253,7 +252,7 @@ document.getElementById('charts-container').addEventListener('click', async (eve
         return;
     }
 
-    // --- NOVO: Lógica para excluir GRÁFICO ---
+    // --- Lógica para excluir GRÁFICO ---
     if (event.target.classList.contains('chart-delete-btn')) {
         const card = event.target.closest('.chart-card');
         const fileName = card.dataset.file;

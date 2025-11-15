@@ -1852,7 +1852,8 @@ function createRadarChart(playerData, selector) {
         .attr("x", (d, i) => rScale(1.15) * Math.cos(angleSlice * i - Math.PI/2))
         .attr("y", (d, i) => rScale(1.15) * Math.sin(angleSlice * i - Math.PI/2))
         .text(d => d.axis)
-        .style("text-anchor", "middle").style("font-size", "12px");
+        .style("text-anchor", "middle").style("font-size", "12px")
+        .attr("class", "radar-axis-label");
 
     // Desenha área do radar
     const radarLine = d3.lineRadial().angle((d, i) => i * angleSlice).radius(d => rScale(d.value));
@@ -2601,7 +2602,7 @@ function updateCardContent(playerData, cardElement) {
     }
 }
 
-async function saveChartAsPNG(elementOrSelector, chartName) {
+async function saveChartAsPNG(elementOrSelector, baseName) { // Mudei 'chartName' para 'baseName'
     const originalElement = typeof elementOrSelector === 'string'
         ? document.querySelector(elementOrSelector)
         : elementOrSelector;
@@ -2612,28 +2613,24 @@ async function saveChartAsPNG(elementOrSelector, chartName) {
     }
 
     const buttonsToHide = originalElement.querySelectorAll('.btn-hide-on-save');
-    // Adiciona a classe que os torna invisíveis
     buttonsToHide.forEach(btn => btn.classList.add('hide-on-save'));
 
     try {
-        //Coloca as imagens DENTRO do elemento original primeiro
+        const isDarkMode = document.body.classList.contains('dark-mode'); 
+        const backgroundColor = isDarkMode ? '#1a1a1a' : '#ffffff';
+
         const svgElements = originalElement.querySelectorAll('svg');
         for (const svgElement of svgElements) {
             await embedSvgImages(svgElement);
         }
-
-        // Aguarda um instante para garantir que as imagens sejam processadas pelo navegador
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Converte o elemento DOM para um SVG Data URL
-        // Esta etapa é mais confiável para capturar layouts complexos.
         const svgDataUrl = await domtoimage.toSvg(originalElement, {
-            bgcolor: '#ffffff',
+            bgcolor: backgroundColor,
             width: originalElement.scrollWidth,
             height: originalElement.scrollHeight
         });
 
-        // Carrega o SVG Data URL em um objeto de Imagem
         const img = new Image();
         const promise = new Promise((resolve, reject) => {
             img.onload = resolve;
@@ -2642,25 +2639,24 @@ async function saveChartAsPNG(elementOrSelector, chartName) {
         });
         await promise;
 
-        // Desenha a imagem (que veio do SVG) em um novo Canvas
         const canvas = document.createElement('canvas');
-        const scale = 2; // Fator de escala para alta resolução
+        const scale = 2;
         canvas.width = originalElement.scrollWidth * scale;
         canvas.height = originalElement.scrollHeight * scale;
         const ctx = canvas.getContext('2d');
         ctx.scale(scale, scale);
         ctx.drawImage(img, 0, 0);
 
-        // Exporta o Canvas para um PNG Base64
         const pngBase64 = canvas.toDataURL('image/png');
-
-        // Envia para o servidor
+        
+        const finalFileName = generateDynamicFileName(baseName || 'grafico_salvo');
+        
         const res = await fetch("/api/save-chart", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 imageBase64: pngBase64,
-                fileName: chartName || "grafico_" + Date.now(),
+                fileName: finalFileName,
             }),
         });
 
@@ -2670,11 +2666,41 @@ async function saveChartAsPNG(elementOrSelector, chartName) {
     } catch (err) {
         console.error("Erro ao salvar gráfico:", err);
         alert("Erro ao salvar o gráfico!");
-    } finally {               
-        // Remove a classe para que os botões voltem a ser visíveis na tela.
+    } finally {
         buttonsToHide.forEach(btn => btn.classList.remove('hide-on-save'));
-        
     }
+}
+
+/**
+ * Lê os filtros de Time e Temporada e gera um sufixo para o nome do arquivo.
+ * @param {string} baseName - O nome base do gráfico (ex: "Heatmap_Faltas").
+ * @returns {string} - O nome final do arquivo com os filtros (ex: "Heatmap_Faltas_Flamengo_2023").
+ */
+function generateDynamicFileName(baseName) {
+    const timeFilter = document.querySelector('#time-filter');
+    const temporadaFilter = document.querySelector('#temporada-filter');
+    
+    // Helper para limpar o nome para arquivos (remove espaços e caracteres especiais)
+    const sanitize = (name) => {
+        if (!name) return '';
+        return name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '-');
+    };
+
+    let finalName = baseName;
+
+    // 1. Adiciona o nome do time se um estiver selecionado
+    if (timeFilter && timeFilter.value) { // 'value' não é nulo ou ""
+        const timeName = timeFilter.options[timeFilter.selectedIndex].text;
+        finalName += '_' + sanitize(timeName);
+    }
+
+    // 2. Adiciona a temporada se uma estiver selecionada
+    if (temporadaFilter && temporadaFilter.value) { // 'value' não é nulo ou ""
+        const temporadaName = temporadaFilter.options[temporadaFilter.selectedIndex].text;
+        finalName += '_' + sanitize(temporadaName);
+    }
+
+    return finalName;
 }
 
 /**
