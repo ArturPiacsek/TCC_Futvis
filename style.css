@@ -619,6 +619,9 @@
         body.dark-mode .stat-value {
             color: #f0f2f5;
         }
+        body.dark-mode .player-card-name{
+            color: #f0f2f5;
+        }
 
         .dark-mode-toggle {
             display: flex;

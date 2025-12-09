@@ -128,7 +128,7 @@ app.get('/api/temporadas', async (req, res) => {
     }
 });
 
-// Rota 1: Top 10 Artilheiros
+// Rota 1: Artilheiros
 app.get('/api/artilheiros', async (req, res) => {
     try {
         const { id_time, id_tempo } = req.query; // Pega ambos os filtros da URL
@@ -160,7 +160,7 @@ app.get('/api/artilheiros', async (req, res) => {
         }else {
         // Se NENHUM ano foi selecionado (Acumulado), filtra pelos 3 anos válidos
         whereClauses.push(`f.id_tempo IN (?, ?, ?)`);
-        params.push(...[1, 276, 549]); // O operador '...' insere os 3 valores no array
+        params.push(...[1, 276, 549]); 
         }
 
         // Se houver alguma condição no array, junta todas com "AND" e adiciona ao SQL
@@ -437,8 +437,7 @@ app.get('/api/analise-temporal', async (req, res) => {
         let whereClauses = [];
         const anos_validos = ['2021', '2022', '2023'];
 
-        if (id_time) {
-            // --- QUERY PARA UM TIME ESPECÍFICO (Esta parte já estava correta) ---
+        if (id_time) {            
             sql = `
                 SELECT
                     DT.ano AS temporada,
@@ -467,8 +466,7 @@ app.get('/api/analise-temporal', async (req, res) => {
             sql += ` WHERE ${whereClauses.join(' AND ')}`;
             sql += ` GROUP BY DT.ano, DT.mes ORDER BY DT.ano, DT.mes;`;
 
-        } else {
-            // --- QUERY GERAL PARA A LIGA INTEIRA (VERSÃO CORRIGIDA) ---
+        } else {            
             sql = `
                 SELECT
                     DT.temporada,
@@ -518,7 +516,7 @@ app.get('/api/kpis', async (req, res) => {
     try {
         const { id_time, id_tempo } = req.query;        
 
-        // Função auxiliar para buscar os dados de um período específico (sem alterações)
+        // Função auxiliar para buscar os dados de um período específico
         const getKpiDataForYear = async (tempoFilter) => {
             if (!tempoFilter) return null;
 
@@ -883,8 +881,7 @@ app.get('/api/fluxo-vitorias', async (req, res) => {
 app.get('/api/disciplina-heatmap', async (req, res) => {
     try {
         const { id_time, ano } = req.query;
-
-        // CORREÇÃO: Usando os nomes corretos das colunas (ex: 'faltas_mandante')
+       
         const statsSubquery = id_time ? `
             (SELECT id_tempo, faltas_mandante AS faltas, (cartoes_amarelos_mandante + cartoes_vermelhos_mandante) AS cartoes FROM fato_partida WHERE id_mandante = ?)
             UNION ALL

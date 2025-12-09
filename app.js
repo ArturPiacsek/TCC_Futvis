@@ -30,7 +30,7 @@ const coresTimes = {
 }
 
 let comparedPlayers = [];
-const MAX_COMPARISONS = 2; // Definimos o máximo de 2 jogadores para comparação
+const MAX_COMPARISONS = 3; // Definimos o máximo de 2 jogadores para comparação
 
 // ----- Função que é chamada QUANDO QUALQUER FILTRO MUDA.  -----
 function updateAllVisualizations() {
@@ -2355,7 +2355,7 @@ function createPieChart(data, selector) {
         .style("background-color", d => color(d)); // Usa a mesma escala de cor
 
     // Adiciona o texto da legenda
-    legendItems.append("span")
+    legendItems.append("h3")
         .style("margin-left", "5px")
         .style("font-size", "12px")
         .text(d => d);
