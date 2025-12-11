@@ -16,18 +16,21 @@ app.use(express.json({ limit: "10mb" })); // necessário para base64
 app.use(express.static(__dirname));
 
 // Configuração da conexão com o banco de dados MySQL
-const dbConfig = {
-    host: 'localhost',    
-    user: 'root',           
-    password: '123456',   
-    database: 'dw_futvis'
-};
+const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    password: '123456',
+    database: 'dw_futvis',
+    waitForConnections: true, // Se todas as conexões estiverem em uso, espera em vez de dar erro
+    connectionLimit: 10,      // Mantém até 10 conexões abertas simultaneamente
+    queueLimit: 0             // Sem limite para a fila de espera (0 = ilimitado)
+});
 
 // Função auxiliar para executar queries e evitar repetição de código
 async function executeQuery(sql, params = []) {
-    const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute(sql, params);
-    await connection.end();
+    // O pool.execute é "inteligente": ele pega uma conexão livre, 
+    // executa a query e libera a conexão de volta para o pool automaticamente.
+    const [rows] = await pool.execute(sql, params);
     return rows;
 }
 
